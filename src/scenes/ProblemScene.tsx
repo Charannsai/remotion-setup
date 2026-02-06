@@ -22,15 +22,15 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 380;
-    const scene2Start = 380;
-    const scene2End = 560;
-    const scene3Start = 560;
-    const scene3End = 680;
-    const scene4Start = 680;
-    const scene4End = 860;
-    const scene5Start = 860;
-    const scene5End = 1080;
+    const scene1End = 420;
+    const scene2Start = 420;
+    const scene2End = 600;
+    const scene3Start = 600;
+    const scene3End = 720;
+    const scene4Start = 720;
+    const scene4End = 920;
+    const scene5Start = 920;
+    const scene5End = 1120;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -40,18 +40,18 @@ export const ProblemScene: React.FC = () => {
 
 
     // ============ PRECISE WORD LAYOUT ============
-    // Tight, intentional positioning with widths for highlight
+    // Proper spacing - no overlapping
 
     const words = [
-        // Row 1: Horizontal flow - tight spacing
-        { text: "Today,", startFrame: 35, x: 0, y: 0, width: 130 },
-        { text: "modern", startFrame: 70, x: 145, y: 0, width: 150 },
-        { text: "software", startFrame: 108, x: 310, y: 0, width: 190 },
-        // Row 2: Below "software", reversed "is not" - aligned
-        { text: "is", startFrame: 155, x: 420, y: 70, width: 45 },
-        { text: "not", startFrame: 175, x: 350, y: 70, width: 60 },
-        // Row 3: "Built" centered below, bigger
-        { text: "Built", startFrame: 210, x: 355, y: 145, width: 140 },
+        // Row 1: Horizontal flow - good spacing between words
+        { text: "Today,", startFrame: 40, x: 0, y: 0, width: 155 },
+        { text: "modern", startFrame: 85, x: 180, y: 0, width: 165 },
+        { text: "software", startFrame: 135, x: 380, y: 0, width: 210 },
+        // Row 2: Below and to the right, "is" then "not" (reversed visually)
+        { text: "is", startFrame: 190, x: 480, y: 90, width: 50 },
+        { text: "not", startFrame: 220, x: 390, y: 90, width: 75 },
+        // Row 3: "Built" big and centered below
+        { text: "Built", startFrame: 265, x: 360, y: 190, width: 170 },
     ];
 
     // ============ ACTIVE WORD HIGHLIGHT ============
@@ -74,15 +74,15 @@ export const ProblemScene: React.FC = () => {
         const nextWord = words[activeIndex + 1];
 
         // Base position on current word
-        let highlightX = currentWord.x - 15; // Padding
-        let highlightY = currentWord.y - 12;
-        let highlightWidth = currentWord.width + 30;
-        let highlightHeight = currentWord.text === "Built" ? 85 : 58;
+        let highlightX = currentWord.x - 18; // Padding
+        let highlightY = currentWord.y - 14;
+        let highlightWidth = currentWord.width + 36;
+        let highlightHeight = currentWord.text === "Built" ? 95 : 62;
 
         // If there's a next word, interpolate towards it as we approach its start frame
         if (nextWord) {
-            const transitionStart = nextWord.startFrame - 20;
-            const transitionEnd = nextWord.startFrame + 10;
+            const transitionStart = nextWord.startFrame - 25;
+            const transitionEnd = nextWord.startFrame + 8;
 
             if (frame >= transitionStart && frame <= transitionEnd) {
                 const t = interpolate(
@@ -91,18 +91,18 @@ export const ProblemScene: React.FC = () => {
                 );
                 const eased = easeInOutCubic(t);
 
-                const nextHeight = nextWord.text === "Built" ? 85 : 58;
+                const nextHeight = nextWord.text === "Built" ? 95 : 62;
 
-                highlightX = currentWord.x - 15 + (nextWord.x - 15 - (currentWord.x - 15)) * eased;
-                highlightY = currentWord.y - 12 + (nextWord.y - 12 - (currentWord.y - 12)) * eased;
-                highlightWidth = (currentWord.width + 30) + ((nextWord.width + 30) - (currentWord.width + 30)) * eased;
+                highlightX = currentWord.x - 18 + (nextWord.x - 18 - (currentWord.x - 18)) * eased;
+                highlightY = currentWord.y - 14 + (nextWord.y - 14 - (currentWord.y - 14)) * eased;
+                highlightWidth = (currentWord.width + 36) + ((nextWord.width + 36) - (currentWord.width + 36)) * eased;
                 highlightHeight = highlightHeight + (nextHeight - highlightHeight) * eased;
             }
         }
 
         // Fade in on first word
         const opacity = activeIndex === 0
-            ? interpolate(frame - words[0].startFrame, [0, 15], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
+            ? interpolate(frame - words[0].startFrame, [0, 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
             : 1;
 
         return { x: highlightX, y: highlightY, width: highlightWidth, height: highlightHeight, opacity };
@@ -115,15 +115,16 @@ export const ProblemScene: React.FC = () => {
     // No gaps - continuous smooth motion
 
     const getCameraPosition = () => {
-        // Define keyframes for smooth interpolation
+        // Define keyframes for smooth interpolation - match word positions
         const keyframes = [
             { frame: 0, x: 0, y: 0 },
-            { frame: 35, x: 0, y: 0 },      // Start at "Today"
-            { frame: 70, x: 145, y: 0 },    // Move to "modern"
-            { frame: 108, x: 310, y: 0 },   // Move to "software"
-            { frame: 155, x: 385, y: 70 },  // Smoothly curve down to "is not"
-            { frame: 210, x: 380, y: 145 }, // Continue down to "Built"
-            { frame: 350, x: 380, y: 145 }, // Hold
+            { frame: 40, x: 0, y: 0 },       // "Today"
+            { frame: 85, x: 180, y: 0 },     // "modern"
+            { frame: 135, x: 380, y: 0 },    // "software"
+            { frame: 190, x: 430, y: 90 },   // "is" - curve down
+            { frame: 220, x: 420, y: 90 },   // "not"
+            { frame: 265, x: 400, y: 190 },  // "Built"
+            { frame: 380, x: 400, y: 190 },  // Hold
         ];
 
         // Find the two keyframes we're between
@@ -160,7 +161,7 @@ export const ProblemScene: React.FC = () => {
     };
 
     const cameraPos = getCameraPosition();
-    const zoomLevel = 3.2; // Tight framing
+    const zoomLevel = 2.6; // Comfortable framing - not too tight
 
     // ============ GRAIN ============
     const renderGrain = () => (
