@@ -8,12 +8,13 @@ const { fontFamily } = loadFont("normal", {
 });
 
 // ============================================
-// PROBLEM SCENE - Creative Kinetic Typography
-// Horizontal tracking then vertical descent
+// PROBLEM SCENE - Refined Kinetic Typography
+// Smooth, seamless, precise positioning
 // ============================================
 
-const easeOutExpo = Easing.out(Easing.exp);
-const easeOutCubic = Easing.out(Easing.cubic);
+// Ultra smooth easing
+const easeOutQuart = Easing.out(Easing.quad);
+const easeInOutCubic = Easing.inOut(Easing.cubic);
 
 export const ProblemScene: React.FC = () => {
     const frame = useCurrentFrame();
@@ -21,14 +22,14 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 420;
-    const scene2Start = 420;
-    const scene2End = 600;
-    const scene3Start = 600;
-    const scene3End = 720;
-    const scene4Start = 720;
-    const scene4End = 900;
-    const scene5Start = 900;
+    const scene1End = 380;
+    const scene2Start = 380;
+    const scene2End = 560;
+    const scene3Start = 560;
+    const scene3End = 680;
+    const scene4Start = 680;
+    const scene4End = 860;
+    const scene5Start = 860;
     const scene5End = 1080;
 
     const currentScene =
@@ -37,76 +38,140 @@ export const ProblemScene: React.FC = () => {
                 frame < scene3End ? 3 :
                     frame < scene4End ? 4 : 5;
 
-    // ============ WORD DEFINITIONS WITH POSITIONS ============
-    // Phase 1: Horizontal tracking (Today, modern, software)
-    // Phase 2: Camera pivots down, "is" "not" appear reversed
-    // Phase 3: Camera shifts down more, "Built" appears big
+
+    // ============ PRECISE WORD LAYOUT ============
+    // Tight, intentional positioning with widths for highlight
 
     const words = [
-        // Horizontal phase - left to right
-        { text: "Today,", startFrame: 40, x: 0, y: 0, phase: "horizontal" },
-        { text: "modern", startFrame: 75, x: 200, y: 0, phase: "horizontal" },
-        { text: "software", startFrame: 110, x: 420, y: 0, phase: "horizontal" },
-        // Vertical descent - reversed "is not"
-        { text: "is", startFrame: 170, x: 520, y: 180, phase: "vertical", size: 48 },
-        { text: "not", startFrame: 195, x: 380, y: 180, phase: "vertical", size: 48 },
-        // Big "Built" below
-        { text: "Built", startFrame: 240, x: 420, y: 340, phase: "vertical", size: 90, emphasis: true },
+        // Row 1: Horizontal flow - tight spacing
+        { text: "Today,", startFrame: 35, x: 0, y: 0, width: 130 },
+        { text: "modern", startFrame: 70, x: 145, y: 0, width: 150 },
+        { text: "software", startFrame: 108, x: 310, y: 0, width: 190 },
+        // Row 2: Below "software", reversed "is not" - aligned
+        { text: "is", startFrame: 155, x: 420, y: 70, width: 45 },
+        { text: "not", startFrame: 175, x: 350, y: 70, width: 60 },
+        // Row 3: "Built" centered below, bigger
+        { text: "Built", startFrame: 210, x: 355, y: 145, width: 140 },
     ];
 
-    // ============ CAMERA SYSTEM ============
-    // Camera follows the visual flow:
-    // 1. Pan right during horizontal phase
-    // 2. Pan down during vertical phase
+    // ============ ACTIVE WORD HIGHLIGHT ============
+    // Calculate which word is currently active and interpolate highlight position
+
+    const getActiveWordIndex = () => {
+        for (let i = words.length - 1; i >= 0; i--) {
+            if (frame >= words[i].startFrame) return i;
+        }
+        return -1;
+    };
+
+    const activeIndex = getActiveWordIndex();
+
+    // Highlight position - smoothly interpolates between words
+    const getHighlightProps = () => {
+        if (activeIndex < 0) return { x: 0, y: 0, width: 0, height: 0, opacity: 0 };
+
+        const currentWord = words[activeIndex];
+        const nextWord = words[activeIndex + 1];
+
+        // Base position on current word
+        let highlightX = currentWord.x - 15; // Padding
+        let highlightY = currentWord.y - 12;
+        let highlightWidth = currentWord.width + 30;
+        let highlightHeight = currentWord.text === "Built" ? 85 : 58;
+
+        // If there's a next word, interpolate towards it as we approach its start frame
+        if (nextWord) {
+            const transitionStart = nextWord.startFrame - 20;
+            const transitionEnd = nextWord.startFrame + 10;
+
+            if (frame >= transitionStart && frame <= transitionEnd) {
+                const t = interpolate(
+                    frame, [transitionStart, transitionEnd], [0, 1],
+                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                );
+                const eased = easeInOutCubic(t);
+
+                const nextHeight = nextWord.text === "Built" ? 85 : 58;
+
+                highlightX = currentWord.x - 15 + (nextWord.x - 15 - (currentWord.x - 15)) * eased;
+                highlightY = currentWord.y - 12 + (nextWord.y - 12 - (currentWord.y - 12)) * eased;
+                highlightWidth = (currentWord.width + 30) + ((nextWord.width + 30) - (currentWord.width + 30)) * eased;
+                highlightHeight = highlightHeight + (nextHeight - highlightHeight) * eased;
+            }
+        }
+
+        // Fade in on first word
+        const opacity = activeIndex === 0
+            ? interpolate(frame - words[0].startFrame, [0, 15], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
+            : 1;
+
+        return { x: highlightX, y: highlightY, width: highlightWidth, height: highlightHeight, opacity };
+    };
+
+    const highlight = getHighlightProps();
+
+
+    // ============ SEAMLESS CAMERA TRACKING ============
+    // No gaps - continuous smooth motion
 
     const getCameraPosition = () => {
-        // Phase 1: Horizontal tracking (frames 0-150)
-        if (frame < 160) {
-            const horizontalProgress = interpolate(
-                frame,
-                [40, 75, 110, 150],
-                [0, 200, 420, 420],
-                { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutCubic }
-            );
-            return { x: horizontalProgress, y: 0 };
+        // Define keyframes for smooth interpolation
+        const keyframes = [
+            { frame: 0, x: 0, y: 0 },
+            { frame: 35, x: 0, y: 0 },      // Start at "Today"
+            { frame: 70, x: 145, y: 0 },    // Move to "modern"
+            { frame: 108, x: 310, y: 0 },   // Move to "software"
+            { frame: 155, x: 385, y: 70 },  // Smoothly curve down to "is not"
+            { frame: 210, x: 380, y: 145 }, // Continue down to "Built"
+            { frame: 350, x: 380, y: 145 }, // Hold
+        ];
+
+        // Find the two keyframes we're between
+        let prevKey = keyframes[0];
+        let nextKey = keyframes[keyframes.length - 1];
+
+        for (let i = 0; i < keyframes.length - 1; i++) {
+            if (frame >= keyframes[i].frame && frame < keyframes[i + 1].frame) {
+                prevKey = keyframes[i];
+                nextKey = keyframes[i + 1];
+                break;
+            }
         }
 
-        // Phase 2: Transition down to "is not" (frames 160-220)
-        if (frame < 230) {
-            const transitionProgress = interpolate(
-                frame, [160, 210], [0, 1],
-                { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo }
-            );
-            return {
-                x: 420 + interpolate(transitionProgress, [0, 1], [0, 30]),
-                y: interpolate(transitionProgress, [0, 1], [0, 180]),
-            };
+        if (frame >= keyframes[keyframes.length - 1].frame) {
+            return { x: nextKey.x, y: nextKey.y };
         }
 
-        // Phase 3: Shift down to "Built" (frames 230+)
-        const builtProgress = interpolate(
-            frame, [230, 280], [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo }
+        // Smooth interpolation between keyframes
+        const progress = interpolate(
+            frame,
+            [prevKey.frame, nextKey.frame],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
+
+        // Extra smooth easing
+        const eased = easeInOutCubic(progress);
+
         return {
-            x: 450,
-            y: 180 + interpolate(builtProgress, [0, 1], [0, 160]),
+            x: prevKey.x + (nextKey.x - prevKey.x) * eased,
+            y: prevKey.y + (nextKey.y - prevKey.y) * eased,
         };
     };
 
     const cameraPos = getCameraPosition();
-    const zoomLevel = 2.8;
+    const zoomLevel = 3.2; // Tight framing
 
-    // ============ GRAIN TEXTURE ============
+    // ============ GRAIN ============
     const renderGrain = () => (
         <div
             style={{
                 position: "absolute",
                 width: "100%",
                 height: "100%",
-                opacity: 0.035,
+                opacity: 0.03,
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                transform: `translate(${Math.sin(time) * 2}px, ${Math.cos(time * 0.7) * 2}px)`,
+                transform: `translate(${Math.sin(time) * 1.5}px, ${Math.cos(time * 0.7) * 1.5}px)`,
                 pointerEvents: "none",
             }}
         />
@@ -115,7 +180,7 @@ export const ProblemScene: React.FC = () => {
     // ============ SCENE 1: KINETIC TYPOGRAPHY ============
     const renderScene1 = () => {
         const fadeOut = interpolate(
-            frame, [scene1End - 50, scene1End], [1, 0],
+            frame, [scene1End - 60, scene1End], [1, 0],
             { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
 
@@ -127,17 +192,16 @@ export const ProblemScene: React.FC = () => {
                     height: "100%",
                     opacity: fadeOut,
                     overflow: "hidden",
-                    background: "#08080c",
+                    background: "#07070a",
                 }}
             >
-                {/* Parallax background */}
+                {/* Subtle ambient glow that follows camera */}
                 <div
                     style={{
                         position: "absolute",
                         width: "100%",
                         height: "100%",
-                        background: `radial-gradient(circle at ${50 - cameraPos.x * 0.02}% ${50 - cameraPos.y * 0.02}%, rgba(99,102,241,0.06) 0%, transparent 60%)`,
-                        transform: `translate(${-cameraPos.x * 0.2}px, ${-cameraPos.y * 0.2}px)`,
+                        background: `radial-gradient(circle at ${50 - cameraPos.x * 0.015}% ${50 + cameraPos.y * 0.02}%, rgba(99,102,241,0.04) 0%, transparent 50%)`,
                     }}
                 />
 
@@ -149,9 +213,10 @@ export const ProblemScene: React.FC = () => {
                         height: "100%",
                         transform: `scale(${zoomLevel}) translate(${-cameraPos.x}px, ${-cameraPos.y}px)`,
                         transformOrigin: "center center",
+                        transition: "transform 0.05s ease-out",
                     }}
                 >
-                    {/* Word container - positioned at center */}
+                    {/* Words container */}
                     <div
                         style={{
                             position: "absolute",
@@ -160,52 +225,77 @@ export const ProblemScene: React.FC = () => {
                             transform: "translate(0, -50%)",
                         }}
                     >
+                        {/* ANIMATED HIGHLIGHT PILL */}
+                        {highlight.opacity > 0 && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    left: highlight.x,
+                                    top: highlight.y,
+                                    width: highlight.width,
+                                    height: highlight.height,
+                                    background: "linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(139,92,246,0.2) 100%)",
+                                    borderRadius: 16,
+                                    opacity: highlight.opacity,
+                                    border: "1px solid rgba(139,92,246,0.3)",
+                                    boxShadow: "0 0 30px rgba(139,92,246,0.3), inset 0 0 20px rgba(99,102,241,0.1)",
+                                    pointerEvents: "none",
+                                }}
+                            />
+                        )}
+
                         {words.map((word, i) => {
                             const wordStarted = frame >= word.startFrame;
                             const framesSinceStart = frame - word.startFrame;
 
-                            // Animation progress
-                            const slideProgress = interpolate(
-                                framesSinceStart,
-                                [0, 30],
-                                [0, 1],
-                                { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo }
-                            );
+                            // Smooth entrance with spring
+                            const enterProgress = spring({
+                                frame: framesSinceStart,
+                                fps,
+                                config: { damping: 28, stiffness: 120, mass: 1 },
+                            });
 
-                            // Different slide direction based on phase
+                            // Determine motion direction based on position
+                            const isHorizontalRow = word.y === 0;
+                            const isBuilt = word.text === "Built";
+
+                            // Slide distance - smaller for tighter feel
+                            const slideDistance = isBuilt ? 40 : 50;
+
+                            // Slide animation
                             let slideX = 0;
                             let slideY = 0;
 
-                            if (word.phase === "horizontal") {
-                                // Slide from right
-                                slideX = wordStarted ? interpolate(slideProgress, [0, 1], [100, 0]) : 120;
+                            if (!wordStarted) {
+                                slideX = isHorizontalRow ? slideDistance : 0;
+                                slideY = !isHorizontalRow ? slideDistance : 0;
                             } else {
-                                // Vertical phase - slide from below
-                                slideY = wordStarted ? interpolate(slideProgress, [0, 1], [60, 0]) : 80;
+                                slideX = isHorizontalRow ? interpolate(enterProgress, [0, 1], [slideDistance, 0]) : 0;
+                                slideY = !isHorizontalRow ? interpolate(enterProgress, [0, 1], [slideDistance, 0]) : 0;
                             }
 
-                            // Motion blur
-                            const motionBlur = wordStarted
-                                ? interpolate(slideProgress, [0, 0.4, 1], [15, 6, 0])
-                                : 20;
+                            // Soft motion blur
+                            const blurAmount = wordStarted
+                                ? interpolate(enterProgress, [0, 0.5, 1], [8, 3, 0])
+                                : 10;
 
-                            // Opacity
+                            // Opacity - fade in smoothly
                             const opacity = wordStarted
-                                ? interpolate(slideProgress, [0, 0.25, 1], [0, 0.6, 1])
+                                ? interpolate(enterProgress, [0, 0.4, 1], [0, 0.8, 1])
                                 : 0;
 
                             // Scale
                             const scale = wordStarted
-                                ? interpolate(slideProgress, [0, 1], [0.88, 1])
-                                : 0.85;
+                                ? interpolate(enterProgress, [0, 1], [0.94, 1])
+                                : 0.9;
 
-                            // Base font size
-                            const baseSize = word.size || 52;
+                            // Font sizing
+                            const fontSize = isBuilt ? 72 : (word.text === "is" || word.text === "not") ? 42 : 48;
+                            const fontWeight = isBuilt ? 700 : (word.text === "modern" || word.text === "software") ? 500 : 400;
 
-                            // Emphasis glow
-                            const isEmphasis = word.emphasis;
-                            const glowIntensity = isEmphasis && slideProgress > 0.6
-                                ? interpolate(slideProgress, [0.6, 1], [0, 1])
+                            // Glow for "Built"
+                            const builtGlow = isBuilt && enterProgress > 0.5
+                                ? interpolate(enterProgress, [0.5, 1], [0, 1])
                                 : 0;
 
                             return (
@@ -216,21 +306,21 @@ export const ProblemScene: React.FC = () => {
                                         left: word.x,
                                         top: word.y,
                                         display: "inline-block",
-                                        fontSize: baseSize,
-                                        fontWeight: isEmphasis ? 700 : word.phase === "horizontal" ? 500 : 400,
+                                        fontSize,
+                                        fontWeight,
                                         color: "#FFFFFF",
                                         fontFamily,
                                         opacity,
-                                        filter: motionBlur > 0.5 ? `blur(${motionBlur * 0.25}px)` : undefined,
-                                        textShadow: motionBlur > 1
-                                            ? word.phase === "horizontal"
-                                                ? `${motionBlur}px 0 ${motionBlur * 0.6}px rgba(255,255,255,0.4)`
-                                                : `0 ${motionBlur}px ${motionBlur * 0.6}px rgba(255,255,255,0.4)`
-                                            : isEmphasis && glowIntensity > 0
-                                                ? `0 0 ${60 * glowIntensity}px rgba(147,112,219,0.8), 0 0 ${120 * glowIntensity}px rgba(147,112,219,0.5)`
+                                        filter: blurAmount > 0.3 ? `blur(${blurAmount * 0.4}px)` : undefined,
+                                        textShadow: isBuilt && builtGlow > 0
+                                            ? `0 0 ${50 * builtGlow}px rgba(139,92,246,0.7), 0 0 ${100 * builtGlow}px rgba(139,92,246,0.4)`
+                                            : blurAmount > 1
+                                                ? isHorizontalRow
+                                                    ? `${blurAmount * 0.8}px 0 ${blurAmount * 0.5}px rgba(255,255,255,0.25)`
+                                                    : `0 ${blurAmount * 0.8}px ${blurAmount * 0.5}px rgba(255,255,255,0.25)`
                                                 : "none",
                                         transform: `translate(${slideX}px, ${slideY}px) scale(${scale})`,
-                                        letterSpacing: isEmphasis ? "0.02em" : "-0.02em",
+                                        letterSpacing: isBuilt ? "0.01em" : "-0.015em",
                                         whiteSpace: "nowrap",
                                     }}
                                 >
@@ -241,11 +331,8 @@ export const ProblemScene: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Vignettes */}
-                <div style={{ position: "absolute", left: 0, top: 0, width: 300, height: "100%", background: "linear-gradient(to right, #08080c 0%, transparent 100%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", right: 0, top: 0, width: 300, height: "100%", background: "linear-gradient(to left, #08080c 0%, transparent 100%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", left: 0, top: 0, width: "100%", height: 200, background: "linear-gradient(to bottom, #08080c 0%, transparent 100%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", left: 0, bottom: 0, width: "100%", height: 200, background: "linear-gradient(to top, #08080c 0%, transparent 100%)", pointerEvents: "none" }} />
+                {/* Soft vignettes */}
+                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(7,7,10,0.9) 100%)", pointerEvents: "none" }} />
             </div>
         );
     };
@@ -255,43 +342,42 @@ export const ProblemScene: React.FC = () => {
         const centerX = width / 2;
         const centerY = height / 2;
         const nodes = [
-            { x: 0, y: 0 }, { x: -300, y: -180 }, { x: 300, y: -150 },
-            { x: -350, y: 120 }, { x: 320, y: 160 }, { x: -150, y: 250 },
-            { x: 180, y: -280 }, { x: -400, y: -50 }, { x: 400, y: 50 },
+            { x: 0, y: 0 }, { x: -280, y: -160 }, { x: 280, y: -140 },
+            { x: -320, y: 100 }, { x: 300, y: 140 }, { x: -140, y: 220 },
+            { x: 160, y: -260 }, { x: -380, y: -40 }, { x: 380, y: 40 },
         ];
         const connections = [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 2], [1, 7], [2, 6], [3, 5], [4, 5]];
-        const expandScale = expanding ? interpolate(frame, [scene5Start, scene5Start + 60], [1, 1.5], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.quad) }) : 1;
+        const expandScale = expanding ? interpolate(frame, [scene5Start, scene5Start + 60], [1, 1.4], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.quad) }) : 1;
 
         return (
-            <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+            <svg style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
                 <defs>
                     <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#6366F1" /><stop offset="100%" stopColor="#A855F7" />
                     </linearGradient>
-                    <filter id="glow"><feGaussianBlur stdDeviation="4" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                    <filter id="glow"><feGaussianBlur stdDeviation="3" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
                 </defs>
                 {connections.map(([from, to], i) => {
-                    const lineDelay = scene2Start + 20 + i * 10;
-                    const lineProgress = spring({ frame: frame - lineDelay, fps, config: { damping: 30, stiffness: 60 } });
-                    if (lineProgress <= 0 || frame < scene2Start) return null;
+                    const lineDelay = scene2Start + 25 + i * 10;
+                    const p = spring({ frame: frame - lineDelay, fps, config: { damping: 30, stiffness: 60 } });
+                    if (p <= 0 || frame < scene2Start) return null;
                     const x1 = centerX + nodes[from].x * expandScale, y1 = centerY + nodes[from].y * expandScale;
                     const x2 = centerX + nodes[to].x * expandScale, y2 = centerY + nodes[to].y * expandScale;
-                    const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                    const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
                     return (
                         <g key={i}>
-                            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="url(#lineGrad)" strokeWidth={1.5} strokeDasharray={length} strokeDashoffset={length * (1 - lineProgress)} opacity={lineProgress * 0.5 * intensity} strokeLinecap="round" filter="url(#glow)" />
-                            {lineProgress > 0.5 && <circle cx={x1 + (x2 - x1) * ((time * 0.3 + i * 0.1) % 1)} cy={y1 + (y2 - y1) * ((time * 0.3 + i * 0.1) % 1)} r={3} fill="white" opacity={0.7 * intensity} />}
+                            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="url(#lineGrad)" strokeWidth={1.5} strokeDasharray={len} strokeDashoffset={len * (1 - p)} opacity={p * 0.5 * intensity} strokeLinecap="round" filter="url(#glow)" />
+                            {p > 0.5 && <circle cx={x1 + (x2 - x1) * ((time * 0.3 + i * 0.1) % 1)} cy={y1 + (y2 - y1) * ((time * 0.3 + i * 0.1) % 1)} r={2.5} fill="white" opacity={0.6 * intensity} />}
                         </g>
                     );
                 })}
-                {nodes.map((node, i) => {
-                    const nodeDelay = scene2Start + 50 + i * 8;
-                    const nodeProgress = spring({ frame: frame - nodeDelay, fps, config: { damping: 20, stiffness: 80 } });
-                    if (nodeProgress <= 0 || frame < scene2Start) return null;
+                {nodes.map((n, i) => {
+                    const np = spring({ frame: frame - scene2Start - 50 - i * 8, fps, config: { damping: 20, stiffness: 80 } });
+                    if (np <= 0 || frame < scene2Start) return null;
                     return (
-                        <g key={`node-${i}`}>
-                            <circle cx={centerX + node.x * expandScale} cy={centerY + node.y * expandScale} r={15 * nodeProgress} fill="#6366F1" opacity={0.2 * intensity} />
-                            <circle cx={centerX + node.x * expandScale} cy={centerY + node.y * expandScale} r={6 * nodeProgress} fill="#A855F7" opacity={0.6 * intensity} />
+                        <g key={`n-${i}`}>
+                            <circle cx={centerX + n.x * expandScale} cy={centerY + n.y * expandScale} r={12 * np} fill="#6366F1" opacity={0.15 * intensity} />
+                            <circle cx={centerX + n.x * expandScale} cy={centerY + n.y * expandScale} r={5 * np} fill="#A855F7" opacity={0.5 * intensity} />
                         </g>
                     );
                 })}
@@ -301,44 +387,44 @@ export const ProblemScene: React.FC = () => {
 
     // ============ SCENE 2-5 ============
     const renderScene2 = () => {
-        const fadeIn = interpolate(frame, [scene2Start, scene2Start + 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const fadeOut = interpolate(frame, [scene2End - 30, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene2Start + 40;
-        const glow = Math.sin((time - scene2Start / fps) * 3) * 0.3 + 0.7;
+        const fadeIn = interpolate(frame, [scene2Start, scene2Start + 35], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const fadeOut = interpolate(frame, [scene2End - 35, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const textStart = scene2Start + 45;
+        const glow = Math.sin(time * 2.5) * 0.25 + 0.75;
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", textAlign: "center", opacity: fadeIn * fadeOut }}>
-                <div style={{ display: "flex", gap: "0.3em", justifyContent: "center", flexWrap: "wrap" }}>
-                    {["It", "is", "built", "around"].map((word, i) => {
-                        const p = spring({ frame: frame - textStart - i * 12, fps, config: { damping: 25, stiffness: 100 } });
-                        return <span key={i} style={{ fontSize: 68, fontWeight: 400, color: "rgba(255,255,255,0.9)", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [25, 0], { extrapolateRight: "clamp" })}px)`, opacity: p }}>{word}</span>;
+                <div style={{ display: "flex", gap: "0.25em", justifyContent: "center", flexWrap: "wrap" }}>
+                    {["It", "is", "built", "around"].map((w, i) => {
+                        const p = spring({ frame: frame - textStart - i * 14, fps, config: { damping: 26, stiffness: 90 } });
+                        return <span key={i} style={{ fontSize: 64, fontWeight: 400, color: "rgba(255,255,255,0.9)", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [20, 0], { extrapolateRight: "clamp" })}px)`, opacity: p }}>{w}</span>;
                     })}
-                    <span style={{ fontSize: 80, fontWeight: 600, color: "#FFF", fontFamily, transform: `translateY(${interpolate(spring({ frame: frame - textStart - 48, fps, config: { damping: 20, stiffness: 80 } }), [0, 1], [30, 0], { extrapolateRight: "clamp" })}px)`, opacity: spring({ frame: frame - textStart - 48, fps, config: { damping: 20, stiffness: 80 } }), textShadow: `0 0 ${60 * glow}px rgba(167,139,250,0.8)` }}>integrations.</span>
+                    <span style={{ fontSize: 76, fontWeight: 600, color: "#FFF", fontFamily, transform: `translateY(${interpolate(spring({ frame: frame - textStart - 56, fps, config: { damping: 22, stiffness: 70 } }), [0, 1], [25, 0], { extrapolateRight: "clamp" })}px)`, opacity: spring({ frame: frame - textStart - 56, fps, config: { damping: 22, stiffness: 70 } }), textShadow: `0 0 ${55 * glow}px rgba(167,139,250,0.75)` }}>integrations.</span>
                 </div>
             </div>
         );
     };
 
     const renderScene3 = () => {
-        const textFade = interpolate(frame, [scene3Start + 30, scene3Start + 70], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutCubic });
-        const fadeOut = interpolate(frame, [scene3End - 20, scene3End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const textFade = interpolate(frame, [scene3Start + 35, scene3Start + 75], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutQuart });
+        const fadeOut = interpolate(frame, [scene3End - 25, scene3End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", opacity: textFade * fadeOut }}>
-                <span style={{ fontSize: 48, fontWeight: 300, color: "rgba(255,255,255,0.7)", fontFamily, letterSpacing: 4 }}>Pause.</span>
+                <span style={{ fontSize: 44, fontWeight: 300, color: "rgba(255,255,255,0.65)", fontFamily, letterSpacing: 3 }}>Pause.</span>
             </div>
         );
     };
 
     const renderScene4 = () => {
-        const fadeIn = interpolate(frame, [scene4Start, scene4Start + 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const fadeOut = interpolate(frame, [scene4End - 30, scene4End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene4Start + 30;
+        const fadeIn = interpolate(frame, [scene4Start, scene4Start + 35], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const fadeOut = interpolate(frame, [scene4End - 35, scene4End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const textStart = scene4Start + 35;
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", textAlign: "center", opacity: fadeIn * fadeOut }}>
-                <div style={{ display: "flex", gap: "0.3em", justifyContent: "center" }}>
-                    {["And", "with", "every", "integration…"].map((word, i) => {
-                        const p = spring({ frame: frame - textStart - i * 18, fps, config: { damping: 25, stiffness: 100 } });
-                        const emph = word.includes("every") || word.includes("integration");
-                        return <span key={i} style={{ fontSize: emph ? 72 : 64, fontWeight: emph ? 600 : 400, color: emph ? "#FFF" : "rgba(255,255,255,0.9)", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [25, 0], { extrapolateRight: "clamp" })}px)`, opacity: p, textShadow: emph ? "0 0 40px rgba(147,112,219,0.5)" : "none" }}>{word}</span>;
+                <div style={{ display: "flex", gap: "0.25em", justifyContent: "center" }}>
+                    {["And", "with", "every", "integration…"].map((w, i) => {
+                        const p = spring({ frame: frame - textStart - i * 16, fps, config: { damping: 26, stiffness: 90 } });
+                        const emph = w.includes("every") || w.includes("integration");
+                        return <span key={i} style={{ fontSize: emph ? 70 : 62, fontWeight: emph ? 600 : 400, color: emph ? "#FFF" : "rgba(255,255,255,0.88)", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [22, 0], { extrapolateRight: "clamp" })}px)`, opacity: p, textShadow: emph ? "0 0 35px rgba(139,92,246,0.45)" : "none" }}>{w}</span>;
                     })}
                 </div>
             </div>
@@ -346,34 +432,34 @@ export const ProblemScene: React.FC = () => {
     };
 
     const renderScene5 = () => {
-        const fadeIn = interpolate(frame, [scene5Start, scene5Start + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const fadeOut = interpolate(frame, [scene5End - 60, scene5End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene5Start + 30;
-        const impactScale = interpolate(frame, [scene5Start, scene5Start + 40], [1.1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.back(1.5)) });
-        const glow = Math.sin((time - scene5Start / fps) * 4) * 0.4 + 0.8;
+        const fadeIn = interpolate(frame, [scene5Start, scene5Start + 25], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const fadeOut = interpolate(frame, [scene5End - 70, scene5End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const textStart = scene5Start + 35;
+        const impactScale = interpolate(frame, [scene5Start, scene5Start + 45], [1.08, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.back(1.3)) });
+        const glow = Math.sin(time * 3.5) * 0.35 + 0.75;
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: `translate(-50%, -50%) scale(${impactScale})`, textAlign: "center", opacity: fadeIn * fadeOut }}>
-                <div style={{ display: "flex", gap: "0.35em", justifyContent: "center" }}>
-                    {["The", "surface"].map((word, i) => {
-                        const p = spring({ frame: frame - textStart - i * 15, fps, config: { damping: 20, stiffness: 90 } });
-                        return <span key={i} style={{ fontSize: 88, fontWeight: 600, color: "#FFF", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [30, 0], { extrapolateRight: "clamp" })}px)`, opacity: p }}>{word}</span>;
+                <div style={{ display: "flex", gap: "0.3em", justifyContent: "center" }}>
+                    {["The", "surface"].map((w, i) => {
+                        const p = spring({ frame: frame - textStart - i * 14, fps, config: { damping: 22, stiffness: 85 } });
+                        return <span key={i} style={{ fontSize: 84, fontWeight: 600, color: "#FFF", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [28, 0], { extrapolateRight: "clamp" })}px)`, opacity: p }}>{w}</span>;
                     })}
-                    <span style={{ position: "relative", fontSize: 96, fontWeight: 700, color: "#FFF", fontFamily, transform: `translateY(${interpolate(spring({ frame: frame - textStart - 30, fps, config: { damping: 15, stiffness: 70 } }), [0, 1], [40, 0], { extrapolateRight: "clamp" })}px)`, opacity: spring({ frame: frame - textStart - 30, fps, config: { damping: 15, stiffness: 70 } }), textShadow: `0 0 ${80 * glow}px rgba(167,139,250,0.9)` }}>
+                    <span style={{ position: "relative", fontSize: 92, fontWeight: 700, color: "#FFF", fontFamily, transform: `translateY(${interpolate(spring({ frame: frame - textStart - 28, fps, config: { damping: 18, stiffness: 65 } }), [0, 1], [35, 0], { extrapolateRight: "clamp" })}px)`, opacity: spring({ frame: frame - textStart - 28, fps, config: { damping: 18, stiffness: 65 } }), textShadow: `0 0 ${70 * glow}px rgba(167,139,250,0.85)` }}>
                         expands.
-                        <span style={{ position: "absolute", bottom: -10, left: "50%", transform: "translateX(-50%)", width: `${interpolate(spring({ frame: frame - textStart - 30, fps, config: { damping: 15, stiffness: 70 } }), [0.5, 1], [0, 100], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}%`, height: 4, background: "linear-gradient(90deg, transparent, #A855F7, transparent)", borderRadius: 2 }} />
+                        <span style={{ position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)", width: `${interpolate(spring({ frame: frame - textStart - 28, fps, config: { damping: 18, stiffness: 65 } }), [0.4, 1], [0, 100], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}%`, height: 3, background: "linear-gradient(90deg, transparent, #A855F7, transparent)", borderRadius: 2 }} />
                     </span>
                 </div>
             </div>
         );
     };
 
-    // ============ MAIN RENDER ============
-    const gradientAngle = time * 12;
-    const scene3Black = currentScene === 3 && frame < scene3Start + 30;
-    const networkIntensity = currentScene >= 2 && currentScene !== 3 ? 1 : currentScene === 3 ? 0.2 : 0;
+    // ============ MAIN ============
+    const gradientAngle = time * 10;
+    const scene3Black = currentScene === 3 && frame < scene3Start + 35;
+    const networkIntensity = currentScene >= 2 && currentScene !== 3 ? 1 : currentScene === 3 ? 0.15 : 0;
 
     return (
-        <AbsoluteFill style={{ background: scene3Black ? "#000" : `linear-gradient(${gradientAngle}deg, #08080c 0%, #0d0d14 50%, #0f0f18 100%)`, fontFamily, overflow: "hidden" }}>
+        <AbsoluteFill style={{ background: scene3Black ? "#000" : `linear-gradient(${gradientAngle}deg, #07070a 0%, #0b0b10 50%, #0e0e14 100%)`, fontFamily, overflow: "hidden" }}>
             {!scene3Black && currentScene !== 1 && renderGrain()}
             {networkIntensity > 0 && renderNetworkLines(networkIntensity, currentScene === 5)}
 
@@ -383,7 +469,7 @@ export const ProblemScene: React.FC = () => {
             {currentScene === 4 && renderScene4()}
             {currentScene === 5 && renderScene5()}
 
-            {currentScene !== 1 && <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.8) 100%)", pointerEvents: "none" }} />}
+            {currentScene !== 1 && <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.75) 100%)", pointerEvents: "none" }} />}
         </AbsoluteFill>
     );
 };
