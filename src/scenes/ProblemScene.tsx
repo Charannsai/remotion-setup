@@ -8,13 +8,14 @@ const { fontFamily } = loadFont("normal", {
 });
 
 // ============================================
-// PROBLEM SCENE - Refined Kinetic Typography
-// Smooth, seamless, precise positioning
+// PROBLEM SCENE - Premium Cinematic Typography
+// Camera chasing the sentence
 // ============================================
 
-// Ultra smooth easing
-const easeOutQuart = Easing.out(Easing.quad);
-const easeInOutCubic = Easing.inOut(Easing.cubic);
+// Premium easing curves
+const easeOutExpo = Easing.out(Easing.exp);
+const easeInOutQuart = Easing.bezier(0.76, 0, 0.24, 1);
+const easeOutBack = Easing.out(Easing.back(1.4));
 
 export const ProblemScene: React.FC = () => {
     const frame = useCurrentFrame();
@@ -22,15 +23,15 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 420;
-    const scene2Start = 420;
-    const scene2End = 600;
-    const scene3Start = 600;
-    const scene3End = 720;
-    const scene4Start = 720;
-    const scene4End = 920;
-    const scene5Start = 920;
-    const scene5End = 1120;
+    const scene1End = 480;
+    const scene2Start = 480;
+    const scene2End = 660;
+    const scene3Start = 660;
+    const scene3End = 780;
+    const scene4Start = 780;
+    const scene4End = 980;
+    const scene5Start = 980;
+    const scene5End = 1200;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -38,96 +39,41 @@ export const ProblemScene: React.FC = () => {
                 frame < scene3End ? 3 :
                     frame < scene4End ? 4 : 5;
 
-
-    // ============ PRECISE WORD LAYOUT ============
-    // Proper spacing - no overlapping
+    // ============ WORD LAYOUT WITH RHYTHM ============
+    // Variable timing: Hold → Slide → Lock → Micro pause
 
     const words = [
-        // Row 1: Horizontal flow - good spacing between words
-        { text: "Today,", startFrame: 40, x: 0, y: 0, width: 155 },
-        { text: "modern", startFrame: 85, x: 180, y: 0, width: 165 },
-        { text: "software", startFrame: 135, x: 380, y: 0, width: 210 },
-        // Row 2: Below and to the right, "is" then "not" (reversed visually)
-        { text: "is", startFrame: 190, x: 480, y: 90, width: 50 },
-        { text: "not", startFrame: 220, x: 390, y: 90, width: 75 },
-        // Row 3: "Built" big and centered below
-        { text: "Built", startFrame: 265, x: 360, y: 190, width: 170 },
+        // First word holds longer (establish rhythm)
+        { text: "Today,", startFrame: 50, x: 0, y: 0, width: 160, holdExtra: 15 },
+        { text: "modern", startFrame: 110, x: 195, y: 0, width: 175, holdExtra: 0 },
+        { text: "software", startFrame: 165, x: 410, y: 0, width: 220, holdExtra: 8 }, // Slow before keyword
+        // Transition to vertical
+        { text: "is", startFrame: 235, x: 520, y: 100, width: 55, holdExtra: 0 },
+        { text: "not", startFrame: 280, x: 420, y: 100, width: 85, holdExtra: 5 },
+        // Big impact word
+        { text: "Built", startFrame: 350, x: 390, y: 210, width: 180, holdExtra: 20 },
     ];
 
-    // ============ ACTIVE WORD HIGHLIGHT ============
-    // Calculate which word is currently active and interpolate highlight position
+    // ============ CAMERA MOTION - GLIDING ON RAILS ============
 
-    const getActiveWordIndex = () => {
-        for (let i = words.length - 1; i >= 0; i--) {
-            if (frame >= words[i].startFrame) return i;
-        }
-        return -1;
-    };
-
-    const activeIndex = getActiveWordIndex();
-
-    // Highlight position - smoothly interpolates between words
-    const getHighlightProps = () => {
-        if (activeIndex < 0) return { x: 0, y: 0, width: 0, height: 0, opacity: 0 };
-
-        const currentWord = words[activeIndex];
-        const nextWord = words[activeIndex + 1];
-
-        // Base position on current word
-        let highlightX = currentWord.x - 18; // Padding
-        let highlightY = currentWord.y - 14;
-        let highlightWidth = currentWord.width + 36;
-        let highlightHeight = currentWord.text === "Built" ? 95 : 62;
-
-        // If there's a next word, interpolate towards it as we approach its start frame
-        if (nextWord) {
-            const transitionStart = nextWord.startFrame - 25;
-            const transitionEnd = nextWord.startFrame + 8;
-
-            if (frame >= transitionStart && frame <= transitionEnd) {
-                const t = interpolate(
-                    frame, [transitionStart, transitionEnd], [0, 1],
-                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-                );
-                const eased = easeInOutCubic(t);
-
-                const nextHeight = nextWord.text === "Built" ? 95 : 62;
-
-                highlightX = currentWord.x - 18 + (nextWord.x - 18 - (currentWord.x - 18)) * eased;
-                highlightY = currentWord.y - 14 + (nextWord.y - 14 - (currentWord.y - 14)) * eased;
-                highlightWidth = (currentWord.width + 36) + ((nextWord.width + 36) - (currentWord.width + 36)) * eased;
-                highlightHeight = highlightHeight + (nextHeight - highlightHeight) * eased;
-            }
-        }
-
-        // Fade in on first word
-        const opacity = activeIndex === 0
-            ? interpolate(frame - words[0].startFrame, [0, 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
-            : 1;
-
-        return { x: highlightX, y: highlightY, width: highlightWidth, height: highlightHeight, opacity };
-    };
-
-    const highlight = getHighlightProps();
-
-
-    // ============ SEAMLESS CAMERA TRACKING ============
-    // No gaps - continuous smooth motion
-
-    const getCameraPosition = () => {
-        // Define keyframes for smooth interpolation - match word positions
+    const getCameraMotion = () => {
+        // Build keyframes with micro pauses (breathing room)
         const keyframes = [
-            { frame: 0, x: 0, y: 0 },
-            { frame: 40, x: 0, y: 0 },       // "Today"
-            { frame: 85, x: 180, y: 0 },     // "modern"
-            { frame: 135, x: 380, y: 0 },    // "software"
-            { frame: 190, x: 430, y: 90 },   // "is" - curve down
-            { frame: 220, x: 420, y: 90 },   // "not"
-            { frame: 265, x: 400, y: 190 },  // "Built"
-            { frame: 380, x: 400, y: 190 },  // Hold
+            { frame: 0, x: 0, y: 0, z: 0 },
+            { frame: 50, x: 0, y: 0, z: 0 },         // Hold on "Today"
+            { frame: 100, x: 0, y: 0, z: 0 },        // Breathing pause
+            { frame: 110, x: 195, y: 0, z: 2 },      // Slide to "modern"
+            { frame: 155, x: 195, y: 0, z: 0 },      // Lock + pause
+            { frame: 165, x: 410, y: 0, z: 3 },      // Slide to "software"
+            { frame: 225, x: 410, y: 0, z: 0 },      // Lock + pause
+            { frame: 235, x: 470, y: 100, z: 4 },    // Curve down to "is"
+            { frame: 270, x: 470, y: 100, z: 0 },    // Lock
+            { frame: 280, x: 450, y: 100, z: 2 },    // Slide to "not"
+            { frame: 340, x: 450, y: 100, z: 0 },    // Lock + pause
+            { frame: 350, x: 430, y: 210, z: 5 },    // Down to "Built"
+            { frame: 450, x: 430, y: 210, z: 0 },    // Final lock
         ];
 
-        // Find the two keyframes we're between
         let prevKey = keyframes[0];
         let nextKey = keyframes[keyframes.length - 1];
 
@@ -140,93 +86,130 @@ export const ProblemScene: React.FC = () => {
         }
 
         if (frame >= keyframes[keyframes.length - 1].frame) {
-            return { x: nextKey.x, y: nextKey.y };
+            return { x: nextKey.x, y: nextKey.y, z: nextKey.z, velocity: 0 };
         }
 
-        // Smooth interpolation between keyframes
-        const progress = interpolate(
-            frame,
-            [prevKey.frame, nextKey.frame],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
+        const duration = nextKey.frame - prevKey.frame;
+        const progress = (frame - prevKey.frame) / duration;
 
-        // Extra smooth easing
-        const eased = easeInOutCubic(progress);
+        // Gliding motion: ease-in-out with slight acceleration
+        const eased = easeInOutQuart(progress);
+
+        // Calculate velocity for motion blur
+        const velocity = Math.abs(eased - easeInOutQuart(Math.max(0, progress - 0.02))) * 50;
 
         return {
             x: prevKey.x + (nextKey.x - prevKey.x) * eased,
             y: prevKey.y + (nextKey.y - prevKey.y) * eased,
+            z: prevKey.z + (nextKey.z - prevKey.z) * eased,
+            velocity,
         };
     };
 
-    const cameraPos = getCameraPosition();
-    const zoomLevel = 2.6; // Comfortable framing - not too tight
+    const camera = getCameraMotion();
+    const zoomLevel = 3.2; // Macro-level framing
 
-    // ============ GRAIN ============
-    const renderGrain = () => (
-        <div
-            style={{
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-                opacity: 0.03,
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                transform: `translate(${Math.sin(time) * 1.5}px, ${Math.cos(time * 0.7) * 1.5}px)`,
-                pointerEvents: "none",
-            }}
-        />
-    );
+    // Fake 3D depth push based on camera z
+    const depthPush = 1 + camera.z * 0.008;
 
-    // ============ SCENE 1: KINETIC TYPOGRAPHY ============
+    // ============ ACTIVE WORD & HIGHLIGHT ============
+
+    const getActiveWordIndex = () => {
+        for (let i = words.length - 1; i >= 0; i--) {
+            if (frame >= words[i].startFrame) return i;
+        }
+        return -1;
+    };
+
+    const activeIndex = getActiveWordIndex();
+
+    // Calculate font size for a word
+    const getFontSize = (word: typeof words[0]) => {
+        if (word.text === "Built") return 78;
+        if (word.text === "is" || word.text === "not") return 46;
+        return 52;
+    };
+
+    const getHighlightProps = () => {
+        if (activeIndex < 0) return { x: 0, y: 0, width: 0, height: 0, opacity: 0 };
+
+        const currentWord = words[activeIndex];
+        const nextWord = words[activeIndex + 1];
+
+        // Calculate height based on font size + padding
+        const currentFontSize = getFontSize(currentWord);
+        const padding = 28; // Horizontal padding each side
+        const verticalPadding = 18; // Vertical padding each side
+
+        let highlightX = currentWord.x - padding;
+        let highlightHeight = currentFontSize + verticalPadding * 2;
+        let highlightY = currentWord.y - verticalPadding + 4; // +4 for baseline adjustment
+        let highlightWidth = currentWord.width + padding * 2;
+
+        if (nextWord) {
+            const transitionStart = nextWord.startFrame - 30;
+            const transitionEnd = nextWord.startFrame + 10;
+
+            if (frame >= transitionStart && frame <= transitionEnd) {
+                const t = interpolate(frame, [transitionStart, transitionEnd], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                const eased = easeInOutQuart(t);
+
+                const nextFontSize = getFontSize(nextWord);
+                const nextHeight = nextFontSize + verticalPadding * 2;
+                const nextY = nextWord.y - verticalPadding + 4;
+
+                highlightX = (currentWord.x - padding) + ((nextWord.x - padding) - (currentWord.x - padding)) * eased;
+                highlightY = highlightY + (nextY - highlightY) * eased;
+                highlightWidth = highlightWidth + ((nextWord.width + padding * 2) - highlightWidth) * eased;
+                highlightHeight = highlightHeight + (nextHeight - highlightHeight) * eased;
+            }
+        }
+
+        const opacity = activeIndex === 0
+            ? interpolate(frame - words[0].startFrame, [0, 25], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
+            : 1;
+
+        return { x: highlightX, y: highlightY, width: highlightWidth, height: highlightHeight, opacity };
+    };
+
+    const highlight = getHighlightProps();
+
+    // ============ SCENE 1: CINEMATIC TYPOGRAPHY ============
+
     const renderScene1 = () => {
-        const fadeOut = interpolate(
-            frame, [scene1End - 60, scene1End], [1, 0],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
+        const fadeOut = interpolate(frame, [scene1End - 60, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+        // Simple parallax offset (no blur - too expensive)
+        const bgOffsetX = camera.x * 0.15;
+        const bgOffsetY = camera.y * 0.15;
 
         return (
-            <div
-                style={{
-                    position: "absolute",
-                    width: "100%",
-                    height: "100%",
-                    opacity: fadeOut,
-                    overflow: "hidden",
-                    background: "#07070a",
-                }}
-            >
-                {/* Subtle ambient glow that follows camera */}
+            <div style={{ position: "absolute", width: "100%", height: "100%", opacity: fadeOut, overflow: "hidden", background: "#06060a" }}>
+
+                {/* ========== SIMPLE AMBIENT BACKGROUND ========== */}
                 <div
                     style={{
                         position: "absolute",
                         width: "100%",
                         height: "100%",
-                        background: `radial-gradient(circle at ${50 - cameraPos.x * 0.015}% ${50 + cameraPos.y * 0.02}%, rgba(99,102,241,0.04) 0%, transparent 50%)`,
+                        background: `radial-gradient(circle at ${50 - bgOffsetX * 0.1}% ${50 + bgOffsetY * 0.1}%, rgba(99,102,241,0.05) 0%, transparent 50%)`,
                     }}
                 />
 
-                {/* CAMERA CONTAINER */}
+                {/* ========== CAMERA CONTAINER ========== */}
                 <div
                     style={{
                         position: "absolute",
                         width: "100%",
                         height: "100%",
-                        transform: `scale(${zoomLevel}) translate(${-cameraPos.x}px, ${-cameraPos.y}px)`,
+                        transform: `scale(${zoomLevel * depthPush}) translate(${-camera.x}px, ${-camera.y}px)`,
                         transformOrigin: "center center",
-                        transition: "transform 0.05s ease-out",
                     }}
                 >
                     {/* Words container */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            left: "50%",
-                            top: "50%",
-                            transform: "translate(0, -50%)",
-                        }}
-                    >
-                        {/* ANIMATED HIGHLIGHT PILL */}
+                    <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(0, -50%)" }}>
+
+                        {/* ========== ANIMATED HIGHLIGHT PILL ========== */}
                         {highlight.opacity > 0 && (
                             <div
                                 style={{
@@ -235,68 +218,58 @@ export const ProblemScene: React.FC = () => {
                                     top: highlight.y,
                                     width: highlight.width,
                                     height: highlight.height,
-                                    background: "linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(139,92,246,0.2) 100%)",
-                                    borderRadius: 16,
+                                    background: "linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.15) 100%)",
+                                    borderRadius: 18,
                                     opacity: highlight.opacity,
-                                    border: "1px solid rgba(139,92,246,0.3)",
-                                    boxShadow: "0 0 30px rgba(139,92,246,0.3), inset 0 0 20px rgba(99,102,241,0.1)",
+                                    border: "1px solid rgba(139,92,246,0.25)",
+                                    boxShadow: `0 0 40px rgba(139,92,246,0.25), inset 0 0 30px rgba(99,102,241,0.08)`,
                                     pointerEvents: "none",
                                 }}
                             />
                         )}
 
+                        {/* ========== WORDS ========== */}
                         {words.map((word, i) => {
                             const wordStarted = frame >= word.startFrame;
                             const framesSinceStart = frame - word.startFrame;
 
-                            // Smooth entrance with spring
-                            const enterProgress = spring({
-                                frame: framesSinceStart,
-                                fps,
-                                config: { damping: 28, stiffness: 120, mass: 1 },
-                            });
+                            // ===== SLIDE IN FROM RIGHT =====
+                            const slideProgress = interpolate(
+                                framesSinceStart,
+                                [0, 28], // Faster slide
+                                [0, 1],
+                                { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo }
+                            );
 
-                            // Determine motion direction based on position
-                            const isHorizontalRow = word.y === 0;
-                            const isBuilt = word.text === "Built";
+                            const slideX = wordStarted
+                                ? interpolate(slideProgress, [0, 1], [60, 0])
+                                : 80;
 
-                            // Slide distance - smaller for tighter feel
-                            const slideDistance = isBuilt ? 40 : 50;
-
-                            // Slide animation
-                            let slideX = 0;
-                            let slideY = 0;
-
-                            if (!wordStarted) {
-                                slideX = isHorizontalRow ? slideDistance : 0;
-                                slideY = !isHorizontalRow ? slideDistance : 0;
-                            } else {
-                                slideX = isHorizontalRow ? interpolate(enterProgress, [0, 1], [slideDistance, 0]) : 0;
-                                slideY = !isHorizontalRow ? interpolate(enterProgress, [0, 1], [slideDistance, 0]) : 0;
-                            }
-
-                            // Soft motion blur
-                            const blurAmount = wordStarted
-                                ? interpolate(enterProgress, [0, 0.5, 1], [8, 3, 0])
-                                : 10;
-
-                            // Opacity - fade in smoothly
-                            const opacity = wordStarted
-                                ? interpolate(enterProgress, [0, 0.4, 1], [0, 0.8, 1])
+                            // ===== BLUR (only when significant) =====
+                            const blurAmount = wordStarted && slideProgress < 0.5
+                                ? interpolate(slideProgress, [0, 0.5], [6, 0])
                                 : 0;
 
-                            // Scale
-                            const scale = wordStarted
-                                ? interpolate(enterProgress, [0, 1], [0.94, 1])
-                                : 0.9;
+                            // ===== SCALE WITH OVERSHOOT (102-104% → 101% → 100%) =====
+                            const baseScale = wordStarted
+                                ? interpolate(slideProgress, [0, 0.6, 0.85, 1], [1.03, 1.005, 1.012, 1])
+                                : 1.04;
+
+                            // ===== OPACITY =====
+                            const opacity = wordStarted
+                                ? interpolate(slideProgress, [0, 0.3, 1], [0, 0.8, 1])
+                                : 0;
 
                             // Font sizing
-                            const fontSize = isBuilt ? 72 : (word.text === "is" || word.text === "not") ? 42 : 48;
-                            const fontWeight = isBuilt ? 700 : (word.text === "modern" || word.text === "software") ? 500 : 400;
+                            const isBuilt = word.text === "Built";
+                            const isSmall = word.text === "is" || word.text === "not";
+                            const fontSize = isBuilt ? 78 : isSmall ? 46 : 52;
+                            const fontWeight = isBuilt ? 700 : isSmall ? 400 : 500;
 
-                            // Glow for "Built"
-                            const builtGlow = isBuilt && enterProgress > 0.5
-                                ? interpolate(enterProgress, [0.5, 1], [0, 1])
+                            // Glow effect for impact words
+                            const isKeyword = ["modern", "software", "Built"].includes(word.text);
+                            const glowIntensity = isKeyword && slideProgress > 0.6
+                                ? interpolate(slideProgress, [0.6, 1], [0, 1])
                                 : 0;
 
                             return (
@@ -312,15 +285,11 @@ export const ProblemScene: React.FC = () => {
                                         color: "#FFFFFF",
                                         fontFamily,
                                         opacity,
-                                        filter: blurAmount > 0.3 ? `blur(${blurAmount * 0.4}px)` : undefined,
-                                        textShadow: isBuilt && builtGlow > 0
-                                            ? `0 0 ${50 * builtGlow}px rgba(139,92,246,0.7), 0 0 ${100 * builtGlow}px rgba(139,92,246,0.4)`
-                                            : blurAmount > 1
-                                                ? isHorizontalRow
-                                                    ? `${blurAmount * 0.8}px 0 ${blurAmount * 0.5}px rgba(255,255,255,0.25)`
-                                                    : `0 ${blurAmount * 0.8}px ${blurAmount * 0.5}px rgba(255,255,255,0.25)`
-                                                : "none",
-                                        transform: `translate(${slideX}px, ${slideY}px) scale(${scale})`,
+                                        filter: blurAmount > 1 ? `blur(${blurAmount}px)` : undefined,
+                                        transform: `translateX(${slideX}px) scale(${baseScale})`,
+                                        textShadow: glowIntensity > 0.3
+                                            ? `0 0 ${40 * glowIntensity}px rgba(139,92,246,0.5)`
+                                            : undefined,
                                         letterSpacing: isBuilt ? "0.01em" : "-0.015em",
                                         whiteSpace: "nowrap",
                                     }}
@@ -332,16 +301,22 @@ export const ProblemScene: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Soft vignettes */}
-                <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(7,7,10,0.9) 100%)", pointerEvents: "none" }} />
+                {/* ========== SIMPLE VIGNETTE ========== */}
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(6,6,10,0.8) 100%)",
+                        pointerEvents: "none",
+                    }}
+                />
             </div>
         );
     };
 
     // ============ NETWORK LINES ============
     const renderNetworkLines = (intensity: number = 1, expanding: boolean = false) => {
-        const centerX = width / 2;
-        const centerY = height / 2;
+        const centerX = width / 2, centerY = height / 2;
         const nodes = [
             { x: 0, y: 0 }, { x: -280, y: -160 }, { x: 280, y: -140 },
             { x: -320, y: 100 }, { x: 300, y: 140 }, { x: -140, y: 220 },
@@ -359,15 +334,14 @@ export const ProblemScene: React.FC = () => {
                     <filter id="glow"><feGaussianBlur stdDeviation="3" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
                 </defs>
                 {connections.map(([from, to], i) => {
-                    const lineDelay = scene2Start + 25 + i * 10;
-                    const p = spring({ frame: frame - lineDelay, fps, config: { damping: 30, stiffness: 60 } });
+                    const p = spring({ frame: frame - scene2Start - 25 - i * 10, fps, config: { damping: 30, stiffness: 60 } });
                     if (p <= 0 || frame < scene2Start) return null;
                     const x1 = centerX + nodes[from].x * expandScale, y1 = centerY + nodes[from].y * expandScale;
                     const x2 = centerX + nodes[to].x * expandScale, y2 = centerY + nodes[to].y * expandScale;
                     const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
                     return (
                         <g key={i}>
-                            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="url(#lineGrad)" strokeWidth={1.5} strokeDasharray={len} strokeDashoffset={len * (1 - p)} opacity={p * 0.5 * intensity} strokeLinecap="round" filter="url(#glow)" />
+                            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="url(#lineGrad)" strokeWidth={1.5} strokeDasharray={len} strokeDashoffset={len * (1 - p)} opacity={p * 0.5 * intensity} filter="url(#glow)" />
                             {p > 0.5 && <circle cx={x1 + (x2 - x1) * ((time * 0.3 + i * 0.1) % 1)} cy={y1 + (y2 - y1) * ((time * 0.3 + i * 0.1) % 1)} r={2.5} fill="white" opacity={0.6 * intensity} />}
                         </g>
                     );
@@ -375,12 +349,7 @@ export const ProblemScene: React.FC = () => {
                 {nodes.map((n, i) => {
                     const np = spring({ frame: frame - scene2Start - 50 - i * 8, fps, config: { damping: 20, stiffness: 80 } });
                     if (np <= 0 || frame < scene2Start) return null;
-                    return (
-                        <g key={`n-${i}`}>
-                            <circle cx={centerX + n.x * expandScale} cy={centerY + n.y * expandScale} r={12 * np} fill="#6366F1" opacity={0.15 * intensity} />
-                            <circle cx={centerX + n.x * expandScale} cy={centerY + n.y * expandScale} r={5 * np} fill="#A855F7" opacity={0.5 * intensity} />
-                        </g>
-                    );
+                    return <g key={`n-${i}`}><circle cx={centerX + n.x * expandScale} cy={centerY + n.y * expandScale} r={12 * np} fill="#6366F1" opacity={0.15 * intensity} /><circle cx={centerX + n.x * expandScale} cy={centerY + n.y * expandScale} r={5 * np} fill="#A855F7" opacity={0.5 * intensity} /></g>;
                 })}
             </svg>
         );
@@ -390,7 +359,7 @@ export const ProblemScene: React.FC = () => {
     const renderScene2 = () => {
         const fadeIn = interpolate(frame, [scene2Start, scene2Start + 35], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         const fadeOut = interpolate(frame, [scene2End - 35, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene2Start + 45;
+        const textStart = scene2Start + 50;
         const glow = Math.sin(time * 2.5) * 0.25 + 0.75;
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", textAlign: "center", opacity: fadeIn * fadeOut }}>
@@ -406,19 +375,15 @@ export const ProblemScene: React.FC = () => {
     };
 
     const renderScene3 = () => {
-        const textFade = interpolate(frame, [scene3Start + 35, scene3Start + 75], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutQuart });
+        const textFade = interpolate(frame, [scene3Start + 40, scene3Start + 80], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
         const fadeOut = interpolate(frame, [scene3End - 25, scene3End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        return (
-            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", opacity: textFade * fadeOut }}>
-                <span style={{ fontSize: 44, fontWeight: 300, color: "rgba(255,255,255,0.65)", fontFamily, letterSpacing: 3 }}>Pause.</span>
-            </div>
-        );
+        return <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", opacity: textFade * fadeOut }}><span style={{ fontSize: 44, fontWeight: 300, color: "rgba(255,255,255,0.65)", fontFamily, letterSpacing: 3 }}>Pause.</span></div>;
     };
 
     const renderScene4 = () => {
         const fadeIn = interpolate(frame, [scene4Start, scene4Start + 35], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         const fadeOut = interpolate(frame, [scene4End - 35, scene4End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene4Start + 35;
+        const textStart = scene4Start + 40;
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", textAlign: "center", opacity: fadeIn * fadeOut }}>
                 <div style={{ display: "flex", gap: "0.25em", justifyContent: "center" }}>
@@ -435,8 +400,8 @@ export const ProblemScene: React.FC = () => {
     const renderScene5 = () => {
         const fadeIn = interpolate(frame, [scene5Start, scene5Start + 25], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
         const fadeOut = interpolate(frame, [scene5End - 70, scene5End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene5Start + 35;
-        const impactScale = interpolate(frame, [scene5Start, scene5Start + 45], [1.08, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.back(1.3)) });
+        const textStart = scene5Start + 40;
+        const impactScale = interpolate(frame, [scene5Start, scene5Start + 50], [1.1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
         const glow = Math.sin(time * 3.5) * 0.35 + 0.75;
         return (
             <div style={{ position: "absolute", left: "50%", top: "50%", transform: `translate(-50%, -50%) scale(${impactScale})`, textAlign: "center", opacity: fadeIn * fadeOut }}>
@@ -455,13 +420,12 @@ export const ProblemScene: React.FC = () => {
     };
 
     // ============ MAIN ============
-    const gradientAngle = time * 10;
-    const scene3Black = currentScene === 3 && frame < scene3Start + 35;
+    const gradientAngle = time * 8;
+    const scene3Black = currentScene === 3 && frame < scene3Start + 40;
     const networkIntensity = currentScene >= 2 && currentScene !== 3 ? 1 : currentScene === 3 ? 0.15 : 0;
 
     return (
-        <AbsoluteFill style={{ background: scene3Black ? "#000" : `linear-gradient(${gradientAngle}deg, #07070a 0%, #0b0b10 50%, #0e0e14 100%)`, fontFamily, overflow: "hidden" }}>
-            {!scene3Black && currentScene !== 1 && renderGrain()}
+        <AbsoluteFill style={{ background: scene3Black ? "#000" : `linear-gradient(${gradientAngle}deg, #06060a 0%, #0a0a10 50%, #0c0c14 100%)`, fontFamily, overflow: "hidden" }}>
             {networkIntensity > 0 && renderNetworkLines(networkIntensity, currentScene === 5)}
 
             {currentScene === 1 && renderScene1()}
