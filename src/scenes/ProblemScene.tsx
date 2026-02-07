@@ -23,15 +23,15 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 480;
-    const scene2Start = 480;
-    const scene2End = 660;
-    const scene3Start = 660;
-    const scene3End = 780;
-    const scene4Start = 780;
-    const scene4End = 980;
-    const scene5Start = 980;
-    const scene5End = 1200;
+    const scene1End = 620;  // Extended for World flip + But + Globe
+    const scene2Start = 620;
+    const scene2End = 800;
+    const scene3Start = 800;
+    const scene3End = 920;
+    const scene4Start = 920;
+    const scene4End = 1120;
+    const scene5Start = 1120;
+    const scene5End = 1340;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -182,12 +182,45 @@ export const ProblemScene: React.FC = () => {
 
     // ============ SCENE 1: CINEMATIC TYPOGRAPHY ============
 
+    // Transition timings (after World appears at frame 420)
+    const worldFlipStart = 460;
+    const worldFlipEnd = 490;
+    const butPopupStart = 485;
+    const globeStart = 530;
+
+
     const renderScene1 = () => {
         const fadeOut = interpolate(frame, [scene1End - 60, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
         // Simple parallax offset (no blur - too expensive)
         const bgOffsetX = camera.x * 0.15;
         const bgOffsetY = camera.y * 0.15;
+
+        // ===== WORLD 3D FLIP ANIMATION =====
+        const worldFlipProgress = interpolate(
+            frame,
+            [worldFlipStart, worldFlipEnd],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack }
+        );
+        const worldRotateX = worldFlipProgress * 360; // Full rotation
+
+
+        // ===== GLOBE ANIMATION =====
+        const globeProgress = spring({
+            frame: frame - globeStart,
+            fps,
+            config: { damping: 20, stiffness: 60 },
+        });
+        const globeRotation = time * 15; // Slow continuous rotation
+
+        // Hide camera container after flip starts
+        const cameraContainerOpacity = interpolate(
+            frame,
+            [worldFlipStart, worldFlipStart + 20],
+            [1, 0],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
 
         return (
             <div style={{ position: "absolute", width: "100%", height: "100%", opacity: fadeOut, overflow: "hidden", background: "#06060a" }}>
@@ -202,7 +235,7 @@ export const ProblemScene: React.FC = () => {
                     }}
                 />
 
-                {/* ========== CAMERA CONTAINER ========== */}
+                {/* ========== CAMERA CONTAINER (fades out during transition) ========== */}
                 <div
                     style={{
                         position: "absolute",
@@ -210,6 +243,7 @@ export const ProblemScene: React.FC = () => {
                         height: "100%",
                         transform: `scale(${zoomLevel * depthPush}) translate(${-camera.x}px, ${-camera.y}px)`,
                         transformOrigin: "center center",
+                        opacity: cameraContainerOpacity,
                     }}
                 >
                     {/* Words container */}
@@ -278,6 +312,13 @@ export const ProblemScene: React.FC = () => {
                                 ? interpolate(slideProgress, [0.6, 1], [0, 1])
                                 : 0;
 
+                            // ===== SPECIAL 3D ROTATION FOR "WORLD" =====
+                            let worldTransform = `translateX(${slideX}px) scale(${baseScale})`;
+                            if (isWorld && frame >= worldFlipStart) {
+                                // Apply 3D rotational flip (bottom to top)
+                                worldTransform = `translateX(${slideX}px) scale(${baseScale}) perspective(1000px) rotateX(${worldRotateX}deg)`;
+                            }
+
                             return (
                                 <span
                                     key={i}
@@ -292,7 +333,8 @@ export const ProblemScene: React.FC = () => {
                                         fontFamily,
                                         opacity,
                                         filter: blurAmount > 1 ? `blur(${blurAmount}px)` : undefined,
-                                        transform: `translateX(${slideX}px) scale(${baseScale})`,
+                                        transform: isWorld ? worldTransform : `translateX(${slideX}px) scale(${baseScale})`,
+                                        transformStyle: isWorld ? "preserve-3d" : undefined,
                                         textShadow: glowIntensity > 0.3
                                             ? `0 0 ${40 * glowIntensity}px rgba(139,92,246,0.5)`
                                             : undefined,
@@ -306,6 +348,342 @@ export const ProblemScene: React.FC = () => {
                         })}
                     </div>
                 </div>
+
+
+                {/* ========== "BUT THE WORLD" - CINEMATIC DROP ========== */}
+                {frame >= butPopupStart && (
+                    <div
+                        style={{
+                            position: "absolute",
+                            left: "50%",
+                            top: "35%",
+                            transform: `translate(-50%, -50%)`,
+                            textAlign: "center",
+                            opacity: interpolate(frame, [butPopupStart, butPopupStart + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+                        }}
+                    >
+                        {/* "But" word */}
+                        <div
+                            style={{
+                                transform: `translateY(${interpolate(
+                                    spring({ frame: frame - butPopupStart, fps, config: { damping: 15, stiffness: 80 } }),
+                                    [0, 1], [80, 0], { extrapolateRight: "clamp" }
+                                )}px)`,
+                                opacity: spring({ frame: frame - butPopupStart, fps, config: { damping: 15, stiffness: 80 } }),
+                            }}
+                        >
+                            <span
+                                style={{
+                                    fontSize: 48,
+                                    fontWeight: 500,
+                                    color: "rgba(255,255,255,0.7)",
+                                    fontFamily,
+                                    letterSpacing: "0.1em",
+                                    textTransform: "uppercase",
+                                }}
+                            >
+                                But
+                            </span>
+                        </div>
+                        {/* "the world" text */}
+                        <div
+                            style={{
+                                marginTop: 10,
+                                transform: `translateY(${interpolate(
+                                    spring({ frame: frame - butPopupStart - 10, fps, config: { damping: 15, stiffness: 80 } }),
+                                    [0, 1], [100, 0], { extrapolateRight: "clamp" }
+                                )}px)`,
+                                opacity: spring({ frame: frame - butPopupStart - 10, fps, config: { damping: 15, stiffness: 80 } }),
+                            }}
+                        >
+                            <span
+                                style={{
+                                    fontSize: 88,
+                                    fontWeight: 700,
+                                    background: "linear-gradient(180deg, #FFFFFF 0%, #A5B4FC 50%, #6366F1 100%)",
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent",
+                                    fontFamily,
+                                    letterSpacing: "0.02em",
+                                    textShadow: "0 0 80px rgba(99,102,241,0.5)",
+                                }}
+                            >
+                                the world
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* ========== PROFESSIONAL FULL-WIDTH HALF GLOBE ========== */}
+                {frame >= globeStart && (
+                    <div
+                        style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            height: interpolate(globeProgress, [0, 1], [0, 400], { extrapolateRight: "clamp" }),
+                            overflow: "hidden",
+                            opacity: interpolate(globeProgress, [0, 0.3], [0, 1], { extrapolateRight: "clamp" }),
+                        }}
+                    >
+                        <svg
+                            width="100%"
+                            height="900"
+                            viewBox="0 0 1920 900"
+                            preserveAspectRatio="xMidYMin slice"
+                            style={{
+                                position: "absolute",
+                                bottom: -500,
+                                left: 0,
+                                transform: `translateY(${interpolate(globeProgress, [0, 1], [200, 0], { extrapolateRight: "clamp" })}px)`,
+                            }}
+                        >
+                            <defs>
+                                {/* Premium ocean gradient - deep realistic blue */}
+                                <radialGradient id="premiumOcean" cx="50%" cy="20%" r="80%">
+                                    <stop offset="0%" stopColor="#1E3A8A" />
+                                    <stop offset="30%" stopColor="#1E40AF" />
+                                    <stop offset="60%" stopColor="#1D4ED8" />
+                                    <stop offset="100%" stopColor="#0F172A" />
+                                </radialGradient>
+
+                                {/* Atmosphere glow */}
+                                <radialGradient id="premiumAtmosphere" cx="50%" cy="0%" r="100%">
+                                    <stop offset="70%" stopColor="transparent" />
+                                    <stop offset="85%" stopColor="rgba(99,102,241,0.15)" />
+                                    <stop offset="95%" stopColor="rgba(139,92,246,0.25)" />
+                                    <stop offset="100%" stopColor="rgba(167,139,250,0.4)" />
+                                </radialGradient>
+
+                                {/* Inner light reflection */}
+                                <radialGradient id="innerLight" cx="30%" cy="20%">
+                                    <stop offset="0%" stopColor="rgba(255,255,255,0.08)" />
+                                    <stop offset="100%" stopColor="transparent" />
+                                </radialGradient>
+
+                                {/* Land gradient - subtle emerald */}
+                                <linearGradient id="premiumLand" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#10B981" />
+                                    <stop offset="50%" stopColor="#059669" />
+                                    <stop offset="100%" stopColor="#047857" />
+                                </linearGradient>
+
+                                {/* City lights glow */}
+                                <filter id="cityGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+
+                                {/* Soft edge blur */}
+                                <filter id="softEdge">
+                                    <feGaussianBlur stdDeviation="2" />
+                                </filter>
+                            </defs>
+
+                            {/* Outer atmosphere glow */}
+                            <ellipse
+                                cx="960"
+                                cy="900"
+                                rx="920"
+                                ry="920"
+                                fill="url(#premiumAtmosphere)"
+                            />
+
+                            {/* Main globe body */}
+                            <ellipse
+                                cx="960"
+                                cy="900"
+                                rx="880"
+                                ry="880"
+                                fill="url(#premiumOcean)"
+                            />
+
+                            {/* Globe edge - subtle blue rim */}
+                            <ellipse
+                                cx="960"
+                                cy="900"
+                                rx="880"
+                                ry="880"
+                                fill="none"
+                                stroke="rgba(147,197,253,0.4)"
+                                strokeWidth="3"
+                            />
+
+                            {/* Inner light reflection */}
+                            <ellipse
+                                cx="960"
+                                cy="900"
+                                rx="860"
+                                ry="860"
+                                fill="url(#innerLight)"
+                            />
+
+                            {/* Subtle latitude grid lines */}
+                            {[200, 350, 500, 650, 800].map((y, i) => {
+                                const distFromCenter = 900 - y;
+                                const rx = distFromCenter < 880 ? Math.sqrt(880 * 880 - distFromCenter * distFromCenter) : 0;
+                                return rx > 0 ? (
+                                    <ellipse
+                                        key={`lat-${i}`}
+                                        cx="960"
+                                        cy={y}
+                                        rx={rx}
+                                        ry={25}
+                                        fill="none"
+                                        stroke="rgba(147,197,253,0.1)"
+                                        strokeWidth="1"
+                                    />
+                                ) : null;
+                            })}
+
+                            {/* Subtle longitude lines */}
+                            {[0, 20, 40, 60, 80, 100, 120, 140, 160].map((angle, i) => (
+                                <ellipse
+                                    key={`long-${i}`}
+                                    cx="960"
+                                    cy="900"
+                                    rx={15}
+                                    ry={880}
+                                    fill="none"
+                                    stroke="rgba(147,197,253,0.08)"
+                                    strokeWidth="1"
+                                    style={{
+                                        transform: `rotate(${angle + globeRotation * 0.3}deg)`,
+                                        transformOrigin: "960px 900px",
+                                    }}
+                                />
+                            ))}
+
+                            {/* Continents - refined shapes */}
+                            <g
+                                style={{
+                                    transform: `rotate(${globeRotation * 0.2}deg)`,
+                                    transformOrigin: "960px 900px",
+                                }}
+                                opacity="0.75"
+                            >
+                                {/* North America */}
+                                <path
+                                    d="M320 300 Q400 220 550 260 Q650 300 700 400 Q680 520 580 500 Q450 480 380 420 Q300 380 320 300Z"
+                                    fill="url(#premiumLand)"
+                                    filter="url(#softEdge)"
+                                />
+                                {/* Europe */}
+                                <path
+                                    d="M900 220 Q980 200 1080 250 Q1120 320 1080 400 Q1000 380 920 320 Q880 280 900 220Z"
+                                    fill="url(#premiumLand)"
+                                    filter="url(#softEdge)"
+                                />
+                                {/* Asia */}
+                                <path
+                                    d="M1100 240 Q1280 180 1450 280 Q1550 400 1480 550 Q1300 620 1150 520 Q1080 420 1100 240Z"
+                                    fill="url(#premiumLand)"
+                                    filter="url(#softEdge)"
+                                />
+                                {/* Africa */}
+                                <path
+                                    d="M880 420 Q960 400 1020 500 Q1000 700 900 780 Q800 740 820 600 Q840 480 880 420Z"
+                                    fill="url(#premiumLand)"
+                                    filter="url(#softEdge)"
+                                />
+                                {/* South America */}
+                                <path
+                                    d="M500 580 Q580 540 620 650 Q600 820 520 880 Q420 820 460 700 Q475 620 500 580Z"
+                                    fill="url(#premiumLand)"
+                                    filter="url(#softEdge)"
+                                />
+                                {/* Australia */}
+                                <path
+                                    d="M1350 650 Q1450 610 1520 700 Q1500 800 1400 840 Q1320 790 1350 650Z"
+                                    fill="url(#premiumLand)"
+                                    filter="url(#softEdge)"
+                                />
+                            </g>
+
+                            {/* City lights / connection points */}
+                            {[
+                                { x: 450, y: 380, size: 4 },   // New York
+                                { x: 380, y: 350, size: 3 },   // Chicago  
+                                { x: 580, y: 450, size: 3 },   // Miami
+                                { x: 950, y: 300, size: 4 },   // London
+                                { x: 1020, y: 320, size: 3 },  // Paris
+                                { x: 1200, y: 350, size: 5 },  // Moscow
+                                { x: 1400, y: 400, size: 5 },  // Tokyo
+                                { x: 1350, y: 500, size: 4 },  // Shanghai
+                                { x: 920, y: 580, size: 3 },   // Cairo
+                                { x: 870, y: 720, size: 3 },   // Lagos
+                                { x: 1420, y: 750, size: 4 },  // Sydney
+                                { x: 540, y: 750, size: 3 },   // São Paulo
+                            ].map((city, i) => {
+                                const pulsePhase = (time * 2 + i * 0.5) % 1;
+                                const pulse = 0.6 + Math.sin(pulsePhase * Math.PI * 2) * 0.4;
+                                const cityOpacity = interpolate(
+                                    frame - globeStart - 20 - i * 3,
+                                    [0, 15],
+                                    [0, 1],
+                                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                                );
+                                return (
+                                    <g key={`city-${i}`} opacity={cityOpacity}>
+                                        {/* City glow */}
+                                        <circle
+                                            cx={city.x}
+                                            cy={city.y}
+                                            r={city.size * 3 * pulse}
+                                            fill="rgba(251,191,36,0.3)"
+                                            filter="url(#cityGlow)"
+                                        />
+                                        {/* City core */}
+                                        <circle
+                                            cx={city.x}
+                                            cy={city.y}
+                                            r={city.size * pulse}
+                                            fill="#FCD34D"
+                                            opacity={0.9}
+                                        />
+                                    </g>
+                                );
+                            })}
+
+                            {/* Subtle scan line effect */}
+                            <ellipse
+                                cx="960"
+                                cy={100 + (time * 80) % 700}
+                                rx={880 * Math.sin(Math.acos(Math.min(1, Math.abs(900 - (100 + (time * 80) % 700)) / 880)))}
+                                ry={3}
+                                fill="rgba(147,197,253,0.15)"
+                                opacity={0.5}
+                            />
+
+                            {/* Top edge glow/highlight */}
+                            <ellipse
+                                cx="960"
+                                cy="200"
+                                rx="600"
+                                ry="30"
+                                fill="rgba(255,255,255,0.06)"
+                            />
+                        </svg>
+
+                        {/* Gradient fade at top edge */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: 100,
+                                background: "linear-gradient(to bottom, #06060a, transparent)",
+                                pointerEvents: "none",
+                            }}
+                        />
+                    </div>
+                )}
 
                 {/* ========== SIMPLE VIGNETTE ========== */}
                 <div
