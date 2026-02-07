@@ -153,8 +153,8 @@ export const ProblemScene: React.FC = () => {
         let highlightWidth = currentWord.width + padding * 2;
 
         if (nextWord) {
-            const transitionStart = nextWord.startFrame - 30;
-            const transitionEnd = nextWord.startFrame + 10;
+            const transitionStart = nextWord.startFrame - 15;
+            const transitionEnd = nextWord.startFrame;
 
             if (frame >= transitionStart && frame <= transitionEnd) {
                 const t = interpolate(frame, [transitionStart, transitionEnd], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
