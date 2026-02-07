@@ -43,15 +43,16 @@ export const ProblemScene: React.FC = () => {
     // Variable timing: Hold → Slide → Lock → Micro pause
 
     const words = [
-        // First word holds longer (establish rhythm)
-        { text: "Today,", startFrame: 50, x: 0, y: 0, width: 160, holdExtra: 15 },
-        { text: "modern", startFrame: 110, x: 195, y: 0, width: 175, holdExtra: 0 },
-        { text: "software", startFrame: 165, x: 410, y: 0, width: 220, holdExtra: 8 }, // Slow before keyword
-        // Transition to vertical
-        { text: "is", startFrame: 235, x: 520, y: 100, width: 55, holdExtra: 0 },
-        { text: "not", startFrame: 280, x: 420, y: 100, width: 85, holdExtra: 5 },
-        // Big impact word
-        { text: "Built", startFrame: 350, x: 390, y: 210, width: 180, holdExtra: 20 },
+        // Row 1: Horizontal flow - "Every frontend wants"
+        { text: "Every", startFrame: 50, x: 0, y: 0, width: 145, holdExtra: 15 },
+        { text: "frontend", startFrame: 110, x: 175, y: 0, width: 210, holdExtra: 0 },
+        { text: "wants", startFrame: 165, x: 420, y: 0, width: 150, holdExtra: 8 },
+        // Row 2: Reversed flow (right to left) - "to" then "talk" then "the"
+        { text: "to", startFrame: 225, x: 520, y: 100, width: 50, holdExtra: 0 },
+        { text: "talk", startFrame: 270, x: 420, y: 100, width: 100, holdExtra: 0 },
+        { text: "the", startFrame: 315, x: 330, y: 100, width: 75, holdExtra: 5 },
+        // Row 3: Big impact word - "World"
+        { text: "World", startFrame: 375, x: 360, y: 210, width: 200, holdExtra: 20 },
     ];
 
     // ============ CAMERA MOTION - GLIDING ON RAILS ============
@@ -60,18 +61,20 @@ export const ProblemScene: React.FC = () => {
         // Build keyframes with micro pauses (breathing room)
         const keyframes = [
             { frame: 0, x: 0, y: 0, z: 0 },
-            { frame: 50, x: 0, y: 0, z: 0 },         // Hold on "Today"
+            { frame: 50, x: 0, y: 0, z: 0 },         // Hold on "Every"
             { frame: 100, x: 0, y: 0, z: 0 },        // Breathing pause
-            { frame: 110, x: 195, y: 0, z: 2 },      // Slide to "modern"
-            { frame: 155, x: 195, y: 0, z: 0 },      // Lock + pause
-            { frame: 165, x: 410, y: 0, z: 3 },      // Slide to "software"
-            { frame: 225, x: 410, y: 0, z: 0 },      // Lock + pause
-            { frame: 235, x: 470, y: 100, z: 4 },    // Curve down to "is"
-            { frame: 270, x: 470, y: 100, z: 0 },    // Lock
-            { frame: 280, x: 450, y: 100, z: 2 },    // Slide to "not"
-            { frame: 340, x: 450, y: 100, z: 0 },    // Lock + pause
-            { frame: 350, x: 430, y: 210, z: 5 },    // Down to "Built"
-            { frame: 450, x: 430, y: 210, z: 0 },    // Final lock
+            { frame: 110, x: 175, y: 0, z: 2 },      // Slide to "frontend"
+            { frame: 155, x: 175, y: 0, z: 0 },      // Lock + pause
+            { frame: 165, x: 420, y: 0, z: 3 },      // Slide to "wants"
+            { frame: 215, x: 420, y: 0, z: 0 },      // Lock + pause
+            { frame: 225, x: 490, y: 100, z: 4 },    // Curve down to "to"
+            { frame: 260, x: 490, y: 100, z: 0 },    // Lock
+            { frame: 270, x: 450, y: 100, z: 2 },    // Slide LEFT to "talk"
+            { frame: 305, x: 450, y: 100, z: 0 },    // Lock
+            { frame: 315, x: 360, y: 100, z: 2 },    // Slide LEFT to "the"
+            { frame: 365, x: 360, y: 100, z: 0 },    // Lock + pause
+            { frame: 375, x: 400, y: 210, z: 5 },    // Down to "World"
+            { frame: 460, x: 400, y: 210, z: 0 },    // Final lock
         ];
 
         let prevKey = keyframes[0];
@@ -125,8 +128,8 @@ export const ProblemScene: React.FC = () => {
 
     // Calculate font size for a word
     const getFontSize = (word: typeof words[0]) => {
-        if (word.text === "Built") return 78;
-        if (word.text === "is" || word.text === "not") return 46;
+        if (word.text === "World") return 78;
+        if (word.text === "to" || word.text === "talk" || word.text === "the") return 46;
         return 52;
     };
 
@@ -261,13 +264,13 @@ export const ProblemScene: React.FC = () => {
                                 : 0;
 
                             // Font sizing
-                            const isBuilt = word.text === "Built";
-                            const isSmall = word.text === "is" || word.text === "not";
-                            const fontSize = isBuilt ? 78 : isSmall ? 46 : 52;
-                            const fontWeight = isBuilt ? 700 : isSmall ? 400 : 500;
+                            const isWorld = word.text === "World";
+                            const isSmall = word.text === "to" || word.text === "talk" || word.text === "the";
+                            const fontSize = isWorld ? 78 : isSmall ? 46 : 52;
+                            const fontWeight = isWorld ? 700 : isSmall ? 400 : 500;
 
                             // Glow effect for impact words
-                            const isKeyword = ["modern", "software", "Built"].includes(word.text);
+                            const isKeyword = ["frontend", "talk", "World"].includes(word.text);
                             const glowIntensity = isKeyword && slideProgress > 0.6
                                 ? interpolate(slideProgress, [0.6, 1], [0, 1])
                                 : 0;
@@ -290,7 +293,7 @@ export const ProblemScene: React.FC = () => {
                                         textShadow: glowIntensity > 0.3
                                             ? `0 0 ${40 * glowIntensity}px rgba(139,92,246,0.5)`
                                             : undefined,
-                                        letterSpacing: isBuilt ? "0.01em" : "-0.015em",
+                                        letterSpacing: isWorld ? "0.01em" : "-0.015em",
                                         whiteSpace: "nowrap",
                                     }}
                                 >
