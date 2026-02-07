@@ -390,7 +390,7 @@ export const ProblemScene: React.FC = () => {
                     const cursorBlink = localFrame % 35 < 18 ? 1 : 0;
 
                     // == 3. Dispersion Logic ==
-                    const disperseProgress = interpolate(localFrame, [160, 210], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
+                    const disperseProgress = interpolate(localFrame, [60, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
 
                     // Collapse Phase (Fade out at end)
                     const collapseProgress = interpolate(localFrame, [200, 240], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
@@ -493,7 +493,7 @@ export const ProblemScene: React.FC = () => {
                             {disperseProgress > 0.01 && dispersedPositions.map((pos, i) => {
                                 const currentX = pos.x * disperseProgress;
                                 const currentY = pos.y * disperseProgress;
-                                const scale = interpolate(localFrame, [160, 190 + i * 5], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
+                                const scale = interpolate(localFrame, [60, 90 + i * 5], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
 
                                 return (
                                     <div key={i} style={{
