@@ -183,12 +183,14 @@ export const ProblemScene: React.FC = () => {
     // Frame 120: Card sequence begins
 
     const renderScene1 = () => {
-        const fadeOut = interpolate(frame, [scene1End - 20, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        // Fast lateral wipe transition (Right to Left camera pan effect)
+        // At scene1End, the camera whips to the left, effectively sliding Scene 1 out to the right.
+        const wipeProgress = interpolate(frame, [scene1End - 15, scene1End], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+        const sceneTranslateX = interpolate(wipeProgress, [0, 1], [0, -2000]); // Move scene wildly to the left
+        const sceneOpacity = interpolate(wipeProgress, [0.8, 1], [1, 0]); // Fade out only at the very end of the wipe
 
-
-
-
-        // Hide camera container as text drops (start of Card Sequence)
+        // Hide camera container as text drops (Legacy Logic check: adjust timings slightly earlier to match wipe?)
+        // The text drop happens intra-scene, but the scene wipe is inter-scene.
         const cameraContainerOpacity = interpolate(
             frame,
             [120, 140],
@@ -196,10 +198,16 @@ export const ProblemScene: React.FC = () => {
             { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
 
-
-
         return (
-            <div style={{ position: "absolute", width: "100%", height: "100%", opacity: fadeOut, overflow: "hidden", background: "#05070F" }}>
+            <div style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                transform: `translateX(${sceneTranslateX}px)`,
+                opacity: sceneOpacity,
+                overflow: "hidden",
+                background: "#05070F"
+            }}>
 
                 {/* ========== CINEMATIC BACKGROUND ========== */}
                 {/* 1. Base Gradient: Deep Navy to Black */}
@@ -370,28 +378,14 @@ export const ProblemScene: React.FC = () => {
                     const entryScale = cardScale;
 
 
-                    // == 2. Advanced Typewriter Logic (Correction Phase) ==
-                    const phase1Text = "But Managing";
-                    const phase2Text = "Integrations shouldn't be this hard.";
+                    // == 2. Continuous Typewriter Logic ==
+                    const fullText = "But Managing Integrations shouldn't be this hard.";
 
-                    let displayText = "";
+                    // Continuous typing from macro view (frame 0) through zoom out
+                    const typeProgress = interpolate(localFrame, [0, 140], [0, fullText.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.linear });
+                    const charIndex = Math.round(typeProgress);
+                    const displayText = fullText.substring(0, charIndex);
 
-                    if (localFrame < 50) {
-                        // Typing Phase 1
-                        const charIndex = Math.round(interpolate(localFrame, [0, 40], [0, phase1Text.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
-                        displayText = phase1Text.substring(0, charIndex);
-                    } else if (localFrame < 80) {
-                        // Pause (Zooming out)
-                        displayText = phase1Text;
-                    } else if (localFrame < 100) {
-                        // Deleting Phase
-                        const deleteIndex = Math.round(interpolate(localFrame, [80, 100], [phase1Text.length, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
-                        displayText = phase1Text.substring(0, deleteIndex);
-                    } else {
-                        // Typing Phase 2
-                        const typeIndex = Math.round(interpolate(localFrame, [100, 170], [0, phase2Text.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.quad) }));
-                        displayText = phase2Text.substring(0, typeIndex);
-                    }
 
                     const cursorBlink = localFrame % 35 < 18 ? 1 : 0;
 
@@ -439,18 +433,27 @@ export const ProblemScene: React.FC = () => {
                                 {/* Card Body */}
                                 <div style={{
                                     width: "100%", height: "100%",
-                                    borderRadius: 30, // 28-32px
-                                    background: "rgba(255, 255, 255, 0.04)",
-                                    backdropFilter: "blur(50px)", // 40-60px
-                                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                                    backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)",
+                                    borderRadius: 30,
+                                    background: "rgba(255, 255, 255, 0.03)", // Lighter, cleaner glass
+                                    backdropFilter: "blur(40px) saturate(120%)", // Crisp blur
+                                    border: "1px solid rgba(255, 255, 255, 0.1)", // Crisper border
                                     boxShadow: `
-                                        0 20px 40px -10px rgba(0,0,0,0.3), 
-                                        0 0 0 1px rgba(255,255,255,0.02) inset
+                                        0 40px 80px -20px rgba(0,0,0,0.5), 
+                                        0 0 0 1px rgba(255,255,255,0.05) inset
                                     `,
                                     display: "flex", alignItems: "center", justifyContent: "center",
-                                    overflow: "hidden"
+                                    overflow: "hidden",
+                                    position: "relative"
                                 }}>
+                                    {/* Shimmer Effect */}
+                                    <div style={{
+                                        position: "absolute",
+                                        top: 0, left: "-100%",
+                                        width: "200%", height: "100%",
+                                        background: "linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 60%)",
+                                        transform: `translateX(${interpolate(localFrame, [0, 150], [0, 100], { extrapolateRight: "clamp" })}%)`,
+                                        pointerEvents: "none"
+                                    }} />
                                     {/* Inner Gradient Soft Touch */}
                                     <div style={{
                                         position: "absolute", inset: 0,
