@@ -43,17 +43,16 @@ export const ProblemScene: React.FC = () => {
     // Variable timing: Hold → Slide → Lock → Micro pause
 
     const words = [
-        // Row 1: Horizontal flow - "Every frontend wants to"
-        { text: "Every", startFrame: 50, x: 0, y: 0, width: 145, holdExtra: 15 },
-        { text: "frontend", startFrame: 110, x: 175, y: 0, width: 210, holdExtra: 0 },
-        { text: "wants", startFrame: 165, x: 420, y: 0, width: 145, holdExtra: 0 },
-        { text: "to", startFrame: 210, x: 600, y: 0, width: 50, holdExtra: 8 },
-        // Row 2: Reversed flow (right to left, camera moves LEFT) - "talk" then "to" then "the"
-        { text: "talk", startFrame: 270, x: 520, y: 100, width: 100, holdExtra: 0 },
-        { text: "to", startFrame: 315, x: 420, y: 100, width: 50, holdExtra: 0 },
-        { text: "the", startFrame: 360, x: 330, y: 100, width: 75, holdExtra: 5 },
-        // Row 3: Big impact word - "World"
-        { text: "World", startFrame: 420, x: 360, y: 210, width: 200, holdExtra: 20 },
+        // Row 1: "Modern apps connect"
+        { text: "Modern", startFrame: 15, x: 0, y: 0, width: 210, holdExtra: 10 },
+        { text: "apps", startFrame: 35, x: 220, y: 0, width: 140, holdExtra: 0 },
+        { text: "connect", startFrame: 55, x: 370, y: 0, width: 220, holdExtra: 0 },
+        // Row 2: "to dozens of" (Standard L->R)
+        { text: "to", startFrame: 75, x: 600, y: 0, width: 60, holdExtra: 0 }, // End of row 1 visual
+        { text: "dozens", startFrame: 90, x: 600, y: 100, width: 200, holdExtra: 0 },
+        { text: "of", startFrame: 105, x: 820, y: 100, width: 70, holdExtra: 0 },
+        // Row 3: "APIs"
+        { text: "APIs", startFrame: 120, x: 600, y: 220, width: 180, holdExtra: 30 },
     ];
 
     // ============ CAMERA MOTION - GLIDING ON RAILS ============
@@ -62,22 +61,14 @@ export const ProblemScene: React.FC = () => {
         // Build keyframes with micro pauses (breathing room)
         const keyframes = [
             { frame: 0, x: 0, y: 0, z: 0 },
-            { frame: 50, x: 0, y: 0, z: 0 },         // Hold on "Every"
-            { frame: 100, x: 0, y: 0, z: 0 },        // Breathing pause
-            { frame: 110, x: 175, y: 0, z: 2 },      // Slide to "frontend"
-            { frame: 155, x: 175, y: 0, z: 0 },      // Lock + pause
-            { frame: 165, x: 420, y: 0, z: 3 },      // Slide to "wants"
-            { frame: 200, x: 420, y: 0, z: 0 },      // Lock
-            { frame: 210, x: 600, y: 0, z: 2 },      // Slide to "to" (end of row 1)
-            { frame: 260, x: 600, y: 0, z: 0 },      // Lock + pause
-            { frame: 270, x: 520, y: 100, z: 4 },    // Curve down to "talk" (start of row 2)
-            { frame: 305, x: 520, y: 100, z: 0 },    // Lock
-            { frame: 315, x: 420, y: 100, z: 2 },    // Slide LEFT to "to"
-            { frame: 350, x: 420, y: 100, z: 0 },    // Lock
-            { frame: 360, x: 330, y: 100, z: 2 },    // Slide LEFT to "the"
-            { frame: 410, x: 330, y: 100, z: 0 },    // Lock + pause
-            { frame: 420, x: 400, y: 210, z: 5 },    // Down to "World"
-            { frame: 500, x: 400, y: 210, z: 0 },    // Final lock
+            { frame: 15, x: 0, y: 0, z: 0 },         // Hold Modern
+            { frame: 35, x: 220, y: 0, z: 2 },       // Slide to apps
+            { frame: 55, x: 370, y: 0, z: 0 },       // Slide to connect
+            { frame: 75, x: 600, y: 0, z: 2 },       // Slide to to
+            { frame: 90, x: 600, y: 100, z: 3 },     // Down to dozens
+            { frame: 105, x: 820, y: 100, z: 2 },    // Slide to of
+            { frame: 120, x: 600, y: 220, z: 4 },    // Down to APIs
+            { frame: 160, x: 600, y: 220, z: 0 },    // Lock
         ];
 
         let prevKey = keyframes[0];
@@ -131,8 +122,8 @@ export const ProblemScene: React.FC = () => {
 
     // Calculate font size for a word
     const getFontSize = (word: typeof words[0]) => {
-        if (word.text === "World") return 78;
-        if (word.text === "to" || word.text === "talk" || word.text === "the") return 46;
+        if (word.text === "APIs") return 78;
+        if (word.text === "to" || word.text === "of") return 46;
         return 52;
     };
 
@@ -183,15 +174,17 @@ export const ProblemScene: React.FC = () => {
     // ============ SCENE 1: CINEMATIC TYPOGRAPHY ============
 
     // Transition timings (after World appears at frame 420)
-    // Frame 430: "But the world" cinematic drop begins  
-    // Frame 430-570: Globe construction sequence
-    const textDropStart = 430;        // Text enters from above
-    const textImpactFrame = 460;      // Text lands with micro-shake
-    const horizonGlowStart = 430;     // Step 1: Bottom edge glow
-    const scanLineStart = 445;        // Step 2: Scan line draws latitude
-    const longitudeStart = 470;       // Step 3: Longitude lines form  
-    const rimLightStart = 500;        // Step 4: Rim light on upper arc
-    const nodeActivationStart = 525;   // Step 5: Node pulses appear
+    // Transition timings
+    // Text animation finishes ~frame 120 (4 seconds)
+    // Frame 160: "But the world" cinematic drop begins  
+    // Frame 160-300: Globe construction sequence
+    const textDropStart = 160;        // Text enters from above
+    const textImpactFrame = 190;      // Text lands with micro-shake
+    const horizonGlowStart = 160;     // Step 1: Bottom edge glow
+    const scanLineStart = 175;        // Step 2: Scan line draws latitude
+    const longitudeStart = 200;       // Step 3: Longitude lines form  
+    const rimLightStart = 230;        // Step 4: Rim light on upper arc
+    const nodeActivationStart = 255;   // Step 5: Node pulses appear
 
     const renderScene1 = () => {
         const fadeOut = interpolate(frame, [scene1End - 20, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -200,6 +193,14 @@ export const ProblemScene: React.FC = () => {
         // Simple parallax offset (no blur - too expensive)
         const bgOffsetX = camera.x * 0.15;
         const bgOffsetY = camera.y * 0.15;
+
+        // Hide camera container as text drops
+        const cameraContainerOpacity = interpolate(
+            frame,
+            [textDropStart, textDropStart + 20],
+            [1, 0],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
 
         // ===== "BUT THE WORLD" GRAVITY DROP =====
         // Fast acceleration first 40%, strong ease-out landing
@@ -293,13 +294,7 @@ export const ProblemScene: React.FC = () => {
             { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
 
-        // Hide camera container as text drops
-        const cameraContainerOpacity = interpolate(
-            frame,
-            [textDropStart, textDropStart + 20],
-            [1, 0],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
+
 
         return (
             <div style={{ position: "absolute", width: "100%", height: "100%", opacity: fadeOut, overflow: "hidden", background: "#06060a" }}>
@@ -380,13 +375,12 @@ export const ProblemScene: React.FC = () => {
                                 : 0;
 
                             // Font sizing
-                            const isWorld = word.text === "World";
-                            const isSmall = word.text === "to" || word.text === "talk" || word.text === "the";
-                            const fontSize = isWorld ? 78 : isSmall ? 46 : 52;
-                            const fontWeight = isWorld ? 700 : isSmall ? 400 : 500;
+                            const fontSize = getFontSize(word);
+                            const isWorld = word.text === "APIs"; // Highlight style for main word
+                            const fontWeight = isWorld ? 700 : (word.text === "to" || word.text === "of") ? 400 : 500;
 
                             // Glow effect for impact words
-                            const isKeyword = ["frontend", "talk", "World"].includes(word.text);
+                            const isKeyword = ["Modern", "connect", "APIs"].includes(word.text);
                             const glowIntensity = isKeyword && slideProgress > 0.6
                                 ? interpolate(slideProgress, [0.6, 1], [0, 1])
                                 : 0;
