@@ -23,15 +23,15 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 620;  // Extended for World flip + But + Globe
-    const scene2Start = 620;
-    const scene2End = 850;
-    const scene3Start = 850;
-    const scene3End = 970;
-    const scene4Start = 970;
-    const scene4End = 1170;
-    const scene5Start = 1170;
-    const scene5End = 1390;
+    const scene1End = 330;  // Extended for Card Sequence (7s)
+    const scene2Start = 330;
+    const scene2End = 450;
+    const scene3Start = 450;
+    const scene3End = 570;
+    const scene4Start = 570;
+    const scene4End = 770;
+    const scene5Start = 770;
+    const scene5End = 990;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -176,15 +176,9 @@ export const ProblemScene: React.FC = () => {
     // Transition timings (after World appears at frame 420)
     // Transition timings
     // Text animation finishes ~frame 120 (4 seconds)
-    // Frame 160: "But the world" cinematic drop begins  
-    // Frame 160-300: Globe construction sequence
-    const textDropStart = 160;        // Text enters from above
-    const textImpactFrame = 190;      // Text lands with micro-shake
-    const horizonGlowStart = 160;     // Step 1: Bottom edge glow
-    const scanLineStart = 175;        // Step 2: Scan line draws latitude
-    const longitudeStart = 200;       // Step 3: Longitude lines form  
-    const rimLightStart = 230;        // Step 4: Rim light on upper arc
-    const nodeActivationStart = 255;   // Step 5: Node pulses appear
+    // Transition timings
+    // Text animation finishes ~frame 120 (4 seconds)
+    // Frame 120: Card sequence begins
 
     const renderScene1 = () => {
         const fadeOut = interpolate(frame, [scene1End - 20, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -194,103 +188,11 @@ export const ProblemScene: React.FC = () => {
         const bgOffsetX = camera.x * 0.15;
         const bgOffsetY = camera.y * 0.15;
 
-        // Hide camera container as text drops
+        // Hide camera container as text drops (start of Card Sequence)
         const cameraContainerOpacity = interpolate(
             frame,
-            [textDropStart, textDropStart + 20],
+            [120, 140],
             [1, 0],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // ===== "BUT THE WORLD" GRAVITY DROP =====
-        // Fast acceleration first 40%, strong ease-out landing
-        const dropProgress = interpolate(
-            frame,
-            [textDropStart, textImpactFrame],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-
-        // Custom gravity easing: fast start (40%), ease-out landing
-        const gravityEase = dropProgress < 0.4
-            ? dropProgress * dropProgress * 2.5  // Accelerate in first 40%
-            : 0.4 + (1 - Math.pow(1 - (dropProgress - 0.4) / 0.6, 3)) * 0.6; // Ease out remaining 60%
-
-        const textY = interpolate(gravityEase, [0, 1], [-200, 0]); // Drop from above frame
-
-        // Motion blur during descent (6px vertical blur)
-        const motionBlurAmount = dropProgress < 0.8
-            ? interpolate(dropProgress, [0, 0.5, 0.8], [0, 6, 2])
-            : 0;
-
-        // Micro vibration on impact (1.5px shake, ~70ms = 2-3 frames at 30fps)
-        const isImpactShake = frame >= textImpactFrame && frame < textImpactFrame + 3;
-        const shakeX = isImpactShake ? Math.sin((frame - textImpactFrame) * 25) * 1.5 : 0;
-        const shakeY = isImpactShake ? Math.cos((frame - textImpactFrame) * 30) * 1.2 : 0;
-
-        // Text opacity (fades in as it descends)
-        const textOpacity = interpolate(
-            frame,
-            [textDropStart, textDropStart + 15],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // ===== GLOBE CONSTRUCTION PHASES =====
-        // Step 1: Horizon glow at bottom
-        const horizonGlowProgress = interpolate(
-            frame,
-            [horizonGlowStart, horizonGlowStart + 20],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // Step 2: Scan line sweep (left to right, draws latitude lines)
-        const scanLineProgress = interpolate(
-            frame,
-            [scanLineStart, scanLineStart + 50],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // Step 3: Longitude lines formation
-        const longitudeProgress = interpolate(
-            frame,
-            [longitudeStart, longitudeStart + 40],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // Step 4: Rim light reveal
-        const rimLightProgress = interpolate(
-            frame,
-            [rimLightStart, rimLightStart + 30],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // Step 5: Node activation (staggered pulses)
-        const nodeActivationProgress = interpolate(
-            frame,
-            [nodeActivationStart, nodeActivationStart + 45],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // Very slow globe rotation (1-2 degrees over entire sequence)
-        const globeRotation = interpolate(
-            frame,
-            [horizonGlowStart, scene1End],
-            [0, 2],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-        );
-
-        // Subtle camera push-in (3-5% zoom)
-        const cinematicZoom = interpolate(
-            frame,
-            [horizonGlowStart, scene1End],
-            [1, 1.04],
             { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
 
@@ -419,288 +321,100 @@ export const ProblemScene: React.FC = () => {
 
 
 
-                {/* ========== "BUT THE WORLD" - CINEMATIC GRAVITY DROP ========== */}
-                {frame >= textDropStart && (
-                    <div
-                        style={{
-                            position: "absolute",
-                            left: "50%",
-                            top: "32%",
-                            transform: `translate(-50%, ${textY + shakeY}px) translateX(${shakeX}px)`,
-                            textAlign: "center",
-                            opacity: textOpacity,
-                            // Motion blur effect during descent
-                            filter: motionBlurAmount > 0.5 ? `blur(0px ${motionBlurAmount}px)` : undefined,
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontSize: 72,
-                                fontWeight: 300,
-                                color: "rgba(232,236,255,0.9)",
-                                fontFamily,
-                                letterSpacing: "0.15em",
-                                textTransform: "uppercase",
-                                textShadow: "0 0 60px rgba(232,236,255,0.2)",
-                                display: "block",
-                            }}
-                        >
-                            But the world
-                        </span>
-                    </div>
-                )}
+                {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
+                {/* Replaces Globe with Card Animation */}
+                {(() => {
+                    const cardSeqStart = 120;
+                    if (frame < cardSeqStart) return null;
 
-                {/* ========== PREMIUM WIREFRAME GLOBE - CINEMATIC CONSTRUCTION ========== */}
-                {frame >= horizonGlowStart && (
-                    <div
-                        style={{
-                            position: "absolute",
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            height: "50%",
-                            overflow: "hidden",
-                            transform: `scale(${cinematicZoom})`,
-                            transformOrigin: "center bottom",
-                        }}
-                    >
-                        {/* Matte dark background with subtle gradient */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                inset: 0,
-                                background: "linear-gradient(to top, #08080c 0%, #0a0a10 30%, transparent 100%)",
-                            }}
-                        />
+                    const localFrame = frame - cardSeqStart;
 
-                        {/* Step 1: Horizon Glow */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                width: "100%",
-                                height: 4,
-                                background: `linear-gradient(90deg, transparent 5%, rgba(232,236,255,${0.15 * horizonGlowProgress}) 30%, rgba(232,236,255,${0.25 * horizonGlowProgress}) 50%, rgba(232,236,255,${0.15 * horizonGlowProgress}) 70%, transparent 95%)`,
-                                boxShadow: `0 0 80px 20px rgba(232,236,255,${0.08 * horizonGlowProgress})`,
-                            }}
-                        />
+                    // Phases
+                    // 0-45: Stack breathing (1.5s)
+                    // 45-105: Expansion (2s)
+                    // 105-150: Overload / Drift (1.5s)
+                    // 150-210: Collapse (2s)
 
-                        {/* Step 2: Scan Line + Globe SVG */}
-                        <svg
-                            width="100%"
-                            height="100%"
-                            viewBox="0 0 1920 540"
-                            preserveAspectRatio="xMidYMax slice"
-                            style={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: 0,
-                            }}
-                        >
-                            <defs>
-                                {/* Ultra-subtle grid line color */}
-                                <linearGradient id="gridLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="rgba(232,236,255,0.08)" />
-                                    <stop offset="50%" stopColor="rgba(232,236,255,0.15)" />
-                                    <stop offset="100%" stopColor="rgba(232,236,255,0.05)" />
-                                </linearGradient>
+                    const expandProgress = interpolate(localFrame, [45, 105], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
+                    const driftProgress = interpolate(localFrame, [105, 150], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const collapseProgress = interpolate(localFrame, [150, 210], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
 
-                                {/* Rim light gradient */}
-                                <linearGradient id="rimLight" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="rgba(232,236,255,0.25)" />
-                                    <stop offset="100%" stopColor="transparent" />
-                                </linearGradient>
+                    // Center Text Opacity
+                    const textOpacity = interpolate(localFrame, [110, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const textFadeOut = interpolate(localFrame, [190, 210], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-                                {/* Node glow filter */}
-                                <filter id="nodeGlow" x="-100%" y="-100%" width="300%" height="300%">
-                                    <feGaussianBlur stdDeviation="4" result="blur" />
-                                    <feMerge>
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
+                    const cards = [
+                        "Server Setup", "Code Maintenance", "Hosting", "Credentials",
+                        "Observability", "Provider Logs", "Error Handling", "Retry Logic"
+                    ];
 
-                                {/* Depth blur for top arc */}
-                                <filter id="depthBlur">
-                                    <feGaussianBlur stdDeviation="1.5" />
-                                </filter>
-                            </defs>
+                    return (
+                        <div style={{ position: "absolute", inset: 0 }}>
+                            {/* Central Text */}
+                            <div style={{
+                                position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                                opacity: textOpacity * textFadeOut, zIndex: 10
+                            }}>
+                                <h2 style={{ fontSize: 52, fontWeight: 700, color: "#FFF", margin: 0, marginBottom: 16, textAlign: "center" }}>
+                                    But managing the API integrations
+                                </h2>
+                                <h3 style={{ fontSize: 42, fontWeight: 400, color: "rgba(255,255,255,0.7)", margin: 0, textAlign: "center" }}>
+                                    shouldn’t be this hard.
+                                </h3>
+                            </div>
 
-                            {/* Globe base - dark graphite matte */}
-                            <ellipse
-                                cx="960"
-                                cy="540"
-                                rx={880}
-                                ry={880}
-                                fill="#0d0d12"
-                                opacity={horizonGlowProgress}
-                            />
+                            {/* Cards */}
+                            {cards.map((card, i) => {
+                                const angle = (i / cards.length) * Math.PI * 2;
+                                const radius = 380; // Distance from center
 
-                            {/* Step 2: Scan Line (sweeping left to right) */}
-                            {scanLineProgress > 0 && scanLineProgress < 1 && (
-                                <rect
-                                    x={scanLineProgress * 1920 - 2}
-                                    y={0}
-                                    width={4}
-                                    height={540}
-                                    fill="rgba(232,236,255,0.4)"
-                                    style={{
-                                        filter: "blur(1px)",
-                                    }}
-                                />
-                            )}
+                                // Expansion
+                                const xExp = Math.cos(angle) * radius * expandProgress;
+                                const yExp = Math.sin(angle) * radius * expandProgress;
 
-                            {/* Latitude lines - drawn progressively with scan line */}
-                            {[120, 200, 280, 360, 440].map((y, i) => {
-                                const distFromCenter = 540 - y;
-                                const baseRx = distFromCenter < 880 ? Math.sqrt(880 * 880 - distFromCenter * distFromCenter) : 0;
-                                // Draw percentage based on scan line position
-                                const drawProgress = interpolate(
-                                    scanLineProgress,
-                                    [i * 0.15, i * 0.15 + 0.4],
-                                    [0, 1],
-                                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                                // Drift (outward slightly)
+                                const xDrift = Math.cos(angle) * 30 * driftProgress;
+                                const yDrift = Math.sin(angle) * 30 * driftProgress;
+
+                                // Collapse (back to center)
+                                // We interpolate from current position back to 0 based on collapseProgress
+                                const currentX = xExp + xDrift;
+                                const currentY = yExp + yDrift;
+                                const finalX = currentX * (1 - collapseProgress);
+                                const finalY = currentY * (1 - collapseProgress);
+
+                                // Breathing (stack phase)
+                                const breath = Math.sin(time * 2 + i) * 2; // Slight vertical oscillation
+                                const stackY = expandProgress < 0.1 ? breath : 0;
+
+                                // Opacity check (fade out during collapse? No, stack visible)
+                                const cardOpacity = 1;
+
+                                return (
+                                    <div key={i} style={{
+                                        position: "absolute",
+                                        left: "50%", top: "50%",
+                                        width: 160, height: 100,
+                                        marginLeft: -80, marginTop: -50,
+                                        transform: `translate(${finalX}px, ${finalY + stackY}px) scale(${1 - collapseProgress * 0.1})`,
+                                        background: "rgba(255,255,255,0.03)",
+                                        backdropFilter: "blur(10px)",
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        borderRadius: 8,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+                                        opacity: cardOpacity,
+                                        zIndex: cards.length - i // Stack order
+                                    }}>
+                                        <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 500, textAlign: "center", opacity: expandProgress }}>
+                                            {card}
+                                        </span>
+                                    </div>
                                 );
-                                const visibleRx = baseRx * drawProgress;
-
-                                return baseRx > 0 && drawProgress > 0 ? (
-                                    <ellipse
-                                        key={`lat-${i}`}
-                                        cx="960"
-                                        cy={y}
-                                        rx={visibleRx}
-                                        ry={18}
-                                        fill="none"
-                                        stroke="rgba(232,236,255,0.12)"
-                                        strokeWidth="1"
-                                        strokeDasharray="8,12"
-                                    />
-                                ) : null;
                             })}
-
-                            {/* Step 3: Longitude lines - forming curvature */}
-                            {[0, 18, 36, 54, 72, 90, 108, 126, 144, 162].map((angle, i) => {
-                                const lineOpacity = interpolate(
-                                    longitudeProgress,
-                                    [i * 0.08, i * 0.08 + 0.3],
-                                    [0, 1],
-                                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-                                );
-
-                                return lineOpacity > 0 ? (
-                                    <ellipse
-                                        key={`long-${i}`}
-                                        cx="960"
-                                        cy="540"
-                                        rx={12}
-                                        ry={880}
-                                        fill="none"
-                                        stroke={`rgba(232,236,255,${0.08 * lineOpacity})`}
-                                        strokeWidth="1"
-                                        style={{
-                                            transform: `rotate(${angle + globeRotation}deg)`,
-                                            transformOrigin: "960px 540px",
-                                        }}
-                                    />
-                                ) : null;
-                            })}
-
-                            {/* Step 4: Rim light on upper arc */}
-                            <ellipse
-                                cx="960"
-                                cy="540"
-                                rx={880}
-                                ry={880}
-                                fill="none"
-                                stroke="url(#rimLight)"
-                                strokeWidth="2"
-                                opacity={rimLightProgress * 0.6}
-                                filter="url(#depthBlur)"
-                            />
-
-                            {/* Subtle inner arc highlight */}
-                            <ellipse
-                                cx="960"
-                                cy="180"
-                                rx="400"
-                                ry="25"
-                                fill="rgba(232,236,255,0.03)"
-                                opacity={rimLightProgress}
-                            />
-
-                            {/* Step 5: Node activation - selective intersection pulses */}
-                            {[
-                                { x: 400, y: 300 },
-                                { x: 680, y: 180 },
-                                { x: 960, y: 120 },
-                                { x: 1240, y: 180 },
-                                { x: 1520, y: 300 },
-                                { x: 560, y: 380 },
-                                { x: 1360, y: 380 },
-                                { x: 800, y: 280 },
-                                { x: 1120, y: 280 },
-                            ].map((node, i) => {
-                                const nodeDelay = i * 0.08;
-                                const nodeOpacity = interpolate(
-                                    nodeActivationProgress,
-                                    [nodeDelay, nodeDelay + 0.2],
-                                    [0, 1],
-                                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-                                );
-                                // Breathing glow
-                                const breathe = 0.7 + Math.sin((time * 1.5 + i * 0.7) * Math.PI) * 0.3;
-
-                                return nodeOpacity > 0 ? (
-                                    <g key={`node-${i}`} opacity={nodeOpacity}>
-                                        {/* Outer glow */}
-                                        <circle
-                                            cx={node.x}
-                                            cy={node.y}
-                                            r={8 * breathe}
-                                            fill="rgba(232,236,255,0.15)"
-                                            filter="url(#nodeGlow)"
-                                        />
-                                        {/* Core */}
-                                        <circle
-                                            cx={node.x}
-                                            cy={node.y}
-                                            r={2.5 * breathe}
-                                            fill="rgba(232,236,255,0.7)"
-                                        />
-                                    </g>
-                                ) : null;
-                            })}
-
-                            {/* Globe outer edge - very subtle */}
-                            <ellipse
-                                cx="960"
-                                cy="540"
-                                rx={880}
-                                ry={880}
-                                fill="none"
-                                stroke="rgba(232,236,255,0.08)"
-                                strokeWidth="1"
-                                opacity={longitudeProgress}
-                            />
-                        </svg>
-
-                        {/* Soft gradient fade at top */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: 150,
-                                background: "linear-gradient(to bottom, #06060a, transparent)",
-                                pointerEvents: "none",
-                            }}
-                        />
-                    </div>
-                )}
+                        </div>
+                    );
+                })()}
 
                 {/* ========== SIMPLE VIGNETTE ========== */}
                 <div
@@ -757,170 +471,23 @@ export const ProblemScene: React.FC = () => {
     };
 
     // ============ SCENE 2-5 ============
-    // ============ SCENE 2: THE MESS (Dashboard UI) ============
+    // ============ SCENE 2: FUSEPLANE REVEAL ============
     const renderScene2 = () => {
-        const localFrame = frame - scene2Start;
-        const fadeOut = interpolate(frame, [scene2End - 30, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-        // TIMING
-        // 0-60: Dashboard visuals establish
-        // 60-100: Cursor moves & clicks "Analytics"
-        // 100-140: Side drawer opens (Friction)
-        // 140-190: Camera pull back & Multiply (Overwhelm)
-        // 190-230: Freeze & Dim (Micro Pause)
-
-        // Camera Zoom Out (Overwhelm Phase)
-        const zoom = interpolate(localFrame, [140, 200], [1, 0.55], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
-        const blur = interpolate(localFrame, [190, 210], [0, 2], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const dim = interpolate(localFrame, [190, 210], [0, 0.4], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-        // Cursor Animation
-        const cursorStart = 60;
-        const cursorClick = 90;
-        const cursorX = interpolate(localFrame, [cursorStart, cursorClick], [width * 0.7, width * 0.5], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
-        const cursorY = interpolate(localFrame, [cursorStart, cursorClick], [height * 0.8, height * 0.45], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
-        const cursorScale = interpolate(localFrame, [cursorClick, cursorClick + 5, cursorClick + 10], [1, 0.8, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-        // Drawer Animation
-        const drawerOpen = interpolate(localFrame, [100, 130], [400, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
-
-        // Dashboard Data
-        const items = [
-            { name: "OpenAI", status: "grn", key: "sk_live_...", badge: "" },
-            { name: "Stripe", status: "grn", key: "pk_test_...", badge: "Rate Limit" },
-            { name: "SendGrid", status: "yel", key: "SG.289...", badge: "" },
-            { name: "Analytics", status: "red", key: "G-2983...", badge: "Auth Error" },
-            { name: "Auth0", status: "grn", key: "client_...", badge: "" },
-            { name: "S3", status: "grn", key: "AKIA...", badge: "" },
-        ];
+        const fadeIn = interpolate(frame, [scene2Start, scene2Start + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const fadeOut = interpolate(frame, [scene2End - 20, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
         return (
-            <div style={{ position: "absolute", inset: 0, opacity: fadeOut, background: "#06060a" }}>
-                {/* Background Grid (Moving) */}
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: fadeIn * fadeOut }}>
                 <div style={{
-                    position: "absolute", inset: "-50%",
-                    backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-                    backgroundSize: "60px 60px",
-                    transform: `translateX(${localFrame * 0.5}px) translateY(${localFrame * 0.2}px) scale(${zoom})`,
-                    transformOrigin: "center center",
-                }} />
-
-                {/* Main Content Container */}
-                <div style={{
-                    position: "absolute", inset: 0,
+                    width: 300, height: 180,
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 12,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    transform: `scale(${zoom})`,
-                    filter: `blur(${blur}px)`,
+                    boxShadow: "0 0 50px rgba(167,139,250,0.15)"
                 }}>
-                    {/* Multiplying Panels (Background Layers) */}
-                    {[1, 2, 3, 4, 5, 6].map((i) => {
-                        const offset = interpolate(localFrame, [140, 200], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-                        const xOff = Math.sin(i * 143) * 600 * offset;
-                        const yOff = Math.cos(i * 212) * 400 * offset;
-                        return (
-                            <div key={i} style={{
-                                position: "absolute", width: 900, height: 600,
-                                background: "#0F1016", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12,
-                                transform: `translate(${xOff}px, ${yOff}px) scale(0.9)`,
-                                opacity: offset * 0.4,
-                                boxShadow: "0 0 40px rgba(0,0,0,0.5)",
-                            }} />
-                        );
-                    })}
-
-                    {/* HERO PANEL */}
-                    <div style={{
-                        position: "relative", width: 900, height: 600,
-                        background: "#0F1016",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 12,
-                        boxShadow: "0 20px 80px rgba(0,0,0,0.6)",
-                        overflow: "hidden",
-                        fontFamily
-                    }}>
-                        {/* Header */}
-                        <div style={{ padding: "20px 30px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: 20, fontWeight: 600, color: "#FFF" }}>Integrations</span>
-                            <div style={{ display: "flex", gap: 10 }}>
-                                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#333" }} />
-                                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#333" }} />
-                            </div>
-                        </div>
-
-                        {/* List */}
-                        <div style={{ padding: "30px" }}>
-                            {items.map((item, i) => (
-                                <div key={i} style={{
-                                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                                    padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.03)",
-                                    opacity: i > 4 ? 0.3 : 1
-                                }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                                        {/* Status Dot */}
-                                        <div style={{
-                                            width: 8, height: 8, borderRadius: "50%",
-                                            background: item.status === "grn" ? "#10B981" : item.status === "red" ? "#EF4444" : "#F59E0B",
-                                            boxShadow: item.status === "red" ? "0 0 10px rgba(239,68,68,0.5)" : "none"
-                                        }} />
-                                        <span style={{ color: "#FFF", width: 120, fontWeight: 500 }}>{item.name}</span>
-                                        <div style={{ background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 4, fontFamily: "monospace", fontSize: 12, color: "#888" }}>
-                                            {item.key}••••
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                                        {item.badge && (
-                                            <span style={{
-                                                fontSize: 11, padding: "2px 8px", borderRadius: 10,
-                                                background: item.status === "red" ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)",
-                                                color: item.status === "red" ? "#EF4444" : "#F59E0B",
-                                                border: `1px solid ${item.status === "red" ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)"}`
-                                            }}>
-                                                {item.badge}
-                                            </span>
-                                        )}
-                                        {/* Toggle */}
-                                        <div style={{ width: 36, height: 20, background: item.status === "grn" ? "#6366F1" : "#333", borderRadius: 20, position: "relative" }}>
-                                            <div style={{ position: "absolute", top: 2, left: item.status === "grn" ? 18 : 2, width: 16, height: 16, background: "#FFF", borderRadius: "50%" }} />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Friction Drawer - Slides in */}
-                        <div style={{
-                            position: "absolute", top: 0, right: 0, bottom: 0, width: 320,
-                            background: "#16171D", borderLeft: "1px solid rgba(255,255,255,0.1)",
-                            transform: `translateX(${drawerOpen}px)`,
-                            padding: 25,
-                            display: "flex", flexDirection: "column", gap: 20
-                        }}>
-                            <div style={{ fontSize: 16, fontWeight: 600, color: "#FFF", marginBottom: 10 }}>Configuration</div>
-                            {["API Key", "Secret Key", "Region", "Retry Policy", "Timeout"].map((label, k) => (
-                                <div key={k}>
-                                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>{label}</div>
-                                    <div style={{ height: 32, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4 }} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <span style={{ fontSize: 48, fontWeight: 700, color: "#FFF", letterSpacing: -1 }}>Fuseplane</span>
                 </div>
-
-                {/* Cursor */}
-                {localFrame < 150 && (
-                    <div style={{
-                        position: "absolute", left: 0, top: 0,
-                        transform: `translate(${cursorX}px, ${cursorY}px) scale(${cursorScale})`,
-                        pointerEvents: "none"
-                    }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z" fill="#FFF" stroke="#000" strokeWidth="1.5" />
-                        </svg>
-                    </div>
-                )}
-
-                {/* Dim Overlay (Micro Pause) */}
-                <div style={{ position: "absolute", inset: 0, background: "#000", opacity: dim }} />
             </div>
         );
     };
