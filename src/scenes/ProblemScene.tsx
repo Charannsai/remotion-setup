@@ -25,13 +25,13 @@ export const ProblemScene: React.FC = () => {
     // ============ SCENE TIMING ============
     const scene1End = 620;  // Extended for World flip + But + Globe
     const scene2Start = 620;
-    const scene2End = 800;
-    const scene3Start = 800;
-    const scene3End = 920;
-    const scene4Start = 920;
-    const scene4End = 1120;
-    const scene5Start = 1120;
-    const scene5End = 1340;
+    const scene2End = 850;
+    const scene3Start = 850;
+    const scene3End = 970;
+    const scene4Start = 970;
+    const scene4End = 1170;
+    const scene5Start = 1170;
+    const scene5End = 1390;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -757,20 +757,170 @@ export const ProblemScene: React.FC = () => {
     };
 
     // ============ SCENE 2-5 ============
+    // ============ SCENE 2: THE MESS (Dashboard UI) ============
     const renderScene2 = () => {
-        const fadeIn = interpolate(frame, [scene2Start, scene2Start + 35], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const fadeOut = interpolate(frame, [scene2End - 35, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-        const textStart = scene2Start + 50;
-        const glow = Math.sin(time * 2.5) * 0.25 + 0.75;
+        const localFrame = frame - scene2Start;
+        const fadeOut = interpolate(frame, [scene2End - 30, scene2End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+        // TIMING
+        // 0-60: Dashboard visuals establish
+        // 60-100: Cursor moves & clicks "Analytics"
+        // 100-140: Side drawer opens (Friction)
+        // 140-190: Camera pull back & Multiply (Overwhelm)
+        // 190-230: Freeze & Dim (Micro Pause)
+
+        // Camera Zoom Out (Overwhelm Phase)
+        const zoom = interpolate(localFrame, [140, 200], [1, 0.55], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+        const blur = interpolate(localFrame, [190, 210], [0, 2], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const dim = interpolate(localFrame, [190, 210], [0, 0.4], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+        // Cursor Animation
+        const cursorStart = 60;
+        const cursorClick = 90;
+        const cursorX = interpolate(localFrame, [cursorStart, cursorClick], [width * 0.7, width * 0.5], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+        const cursorY = interpolate(localFrame, [cursorStart, cursorClick], [height * 0.8, height * 0.45], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+        const cursorScale = interpolate(localFrame, [cursorClick, cursorClick + 5, cursorClick + 10], [1, 0.8, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+        // Drawer Animation
+        const drawerOpen = interpolate(localFrame, [100, 130], [400, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
+
+        // Dashboard Data
+        const items = [
+            { name: "OpenAI", status: "grn", key: "sk_live_...", badge: "" },
+            { name: "Stripe", status: "grn", key: "pk_test_...", badge: "Rate Limit" },
+            { name: "SendGrid", status: "yel", key: "SG.289...", badge: "" },
+            { name: "Analytics", status: "red", key: "G-2983...", badge: "Auth Error" },
+            { name: "Auth0", status: "grn", key: "client_...", badge: "" },
+            { name: "S3", status: "grn", key: "AKIA...", badge: "" },
+        ];
+
         return (
-            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", textAlign: "center", opacity: fadeIn * fadeOut }}>
-                <div style={{ display: "flex", gap: "0.25em", justifyContent: "center", flexWrap: "wrap" }}>
-                    {["It", "is", "built", "around"].map((w, i) => {
-                        const p = spring({ frame: frame - textStart - i * 14, fps, config: { damping: 26, stiffness: 90 } });
-                        return <span key={i} style={{ fontSize: 64, fontWeight: 400, color: "rgba(255,255,255,0.9)", fontFamily, transform: `translateY(${interpolate(p, [0, 1], [20, 0], { extrapolateRight: "clamp" })}px)`, opacity: p }}>{w}</span>;
+            <div style={{ position: "absolute", inset: 0, opacity: fadeOut, background: "#06060a" }}>
+                {/* Background Grid (Moving) */}
+                <div style={{
+                    position: "absolute", inset: "-50%",
+                    backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+                    backgroundSize: "60px 60px",
+                    transform: `translateX(${localFrame * 0.5}px) translateY(${localFrame * 0.2}px) scale(${zoom})`,
+                    transformOrigin: "center center",
+                }} />
+
+                {/* Main Content Container */}
+                <div style={{
+                    position: "absolute", inset: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transform: `scale(${zoom})`,
+                    filter: `blur(${blur}px)`,
+                }}>
+                    {/* Multiplying Panels (Background Layers) */}
+                    {[1, 2, 3, 4, 5, 6].map((i) => {
+                        const offset = interpolate(localFrame, [140, 200], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                        const xOff = Math.sin(i * 143) * 600 * offset;
+                        const yOff = Math.cos(i * 212) * 400 * offset;
+                        return (
+                            <div key={i} style={{
+                                position: "absolute", width: 900, height: 600,
+                                background: "#0F1016", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12,
+                                transform: `translate(${xOff}px, ${yOff}px) scale(0.9)`,
+                                opacity: offset * 0.4,
+                                boxShadow: "0 0 40px rgba(0,0,0,0.5)",
+                            }} />
+                        );
                     })}
-                    <span style={{ fontSize: 76, fontWeight: 600, color: "#FFF", fontFamily, transform: `translateY(${interpolate(spring({ frame: frame - textStart - 56, fps, config: { damping: 22, stiffness: 70 } }), [0, 1], [25, 0], { extrapolateRight: "clamp" })}px)`, opacity: spring({ frame: frame - textStart - 56, fps, config: { damping: 22, stiffness: 70 } }), textShadow: `0 0 ${55 * glow}px rgba(167,139,250,0.75)` }}>integrations.</span>
+
+                    {/* HERO PANEL */}
+                    <div style={{
+                        position: "relative", width: 900, height: 600,
+                        background: "#0F1016",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 12,
+                        boxShadow: "0 20px 80px rgba(0,0,0,0.6)",
+                        overflow: "hidden",
+                        fontFamily
+                    }}>
+                        {/* Header */}
+                        <div style={{ padding: "20px 30px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 20, fontWeight: 600, color: "#FFF" }}>Integrations</span>
+                            <div style={{ display: "flex", gap: 10 }}>
+                                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#333" }} />
+                                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#333" }} />
+                            </div>
+                        </div>
+
+                        {/* List */}
+                        <div style={{ padding: "30px" }}>
+                            {items.map((item, i) => (
+                                <div key={i} style={{
+                                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.03)",
+                                    opacity: i > 4 ? 0.3 : 1
+                                }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                                        {/* Status Dot */}
+                                        <div style={{
+                                            width: 8, height: 8, borderRadius: "50%",
+                                            background: item.status === "grn" ? "#10B981" : item.status === "red" ? "#EF4444" : "#F59E0B",
+                                            boxShadow: item.status === "red" ? "0 0 10px rgba(239,68,68,0.5)" : "none"
+                                        }} />
+                                        <span style={{ color: "#FFF", width: 120, fontWeight: 500 }}>{item.name}</span>
+                                        <div style={{ background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 4, fontFamily: "monospace", fontSize: 12, color: "#888" }}>
+                                            {item.key}••••
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                                        {item.badge && (
+                                            <span style={{
+                                                fontSize: 11, padding: "2px 8px", borderRadius: 10,
+                                                background: item.status === "red" ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)",
+                                                color: item.status === "red" ? "#EF4444" : "#F59E0B",
+                                                border: `1px solid ${item.status === "red" ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)"}`
+                                            }}>
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                        {/* Toggle */}
+                                        <div style={{ width: 36, height: 20, background: item.status === "grn" ? "#6366F1" : "#333", borderRadius: 20, position: "relative" }}>
+                                            <div style={{ position: "absolute", top: 2, left: item.status === "grn" ? 18 : 2, width: 16, height: 16, background: "#FFF", borderRadius: "50%" }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Friction Drawer - Slides in */}
+                        <div style={{
+                            position: "absolute", top: 0, right: 0, bottom: 0, width: 320,
+                            background: "#16171D", borderLeft: "1px solid rgba(255,255,255,0.1)",
+                            transform: `translateX(${drawerOpen}px)`,
+                            padding: 25,
+                            display: "flex", flexDirection: "column", gap: 20
+                        }}>
+                            <div style={{ fontSize: 16, fontWeight: 600, color: "#FFF", marginBottom: 10 }}>Configuration</div>
+                            {["API Key", "Secret Key", "Region", "Retry Policy", "Timeout"].map((label, k) => (
+                                <div key={k}>
+                                    <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>{label}</div>
+                                    <div style={{ height: 32, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 4 }} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
+
+                {/* Cursor */}
+                {localFrame < 150 && (
+                    <div style={{
+                        position: "absolute", left: 0, top: 0,
+                        transform: `translate(${cursorX}px, ${cursorY}px) scale(${cursorScale})`,
+                        pointerEvents: "none"
+                    }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z" fill="#FFF" stroke="#000" strokeWidth="1.5" />
+                        </svg>
+                    </div>
+                )}
+
+                {/* Dim Overlay (Micro Pause) */}
+                <div style={{ position: "absolute", inset: 0, background: "#000", opacity: dim }} />
             </div>
         );
     };
@@ -823,7 +973,8 @@ export const ProblemScene: React.FC = () => {
     // ============ MAIN ============
     const gradientAngle = time * 8;
     const scene3Black = currentScene === 3 && frame < scene3Start + 40;
-    const networkIntensity = currentScene >= 2 && currentScene !== 3 ? 1 : currentScene === 3 ? 0.15 : 0;
+    // Disable global network lines for scene 2 (has its own grid)
+    const networkIntensity = currentScene >= 2 && currentScene !== 3 && currentScene !== 2 ? 1 : currentScene === 3 ? 0.15 : 0;
 
     return (
         <AbsoluteFill style={{ background: scene3Black ? "#000" : `linear-gradient(${gradientAngle}deg, #06060a 0%, #0a0a10 50%, #0c0c14 100%)`, fontFamily, overflow: "hidden" }}>
