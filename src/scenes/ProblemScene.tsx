@@ -43,16 +43,17 @@ export const ProblemScene: React.FC = () => {
     // Variable timing: Hold → Slide → Lock → Micro pause
 
     const words = [
-        // Row 1: Horizontal flow - "Every frontend wants"
+        // Row 1: Horizontal flow - "Every frontend wants to"
         { text: "Every", startFrame: 50, x: 0, y: 0, width: 145, holdExtra: 15 },
         { text: "frontend", startFrame: 110, x: 175, y: 0, width: 210, holdExtra: 0 },
-        { text: "wants", startFrame: 165, x: 420, y: 0, width: 150, holdExtra: 8 },
-        // Row 2: Reversed flow (right to left) - "to" then "talk" then "the"
-        { text: "to", startFrame: 225, x: 520, y: 100, width: 50, holdExtra: 0 },
-        { text: "talk", startFrame: 270, x: 420, y: 100, width: 100, holdExtra: 0 },
-        { text: "the", startFrame: 315, x: 330, y: 100, width: 75, holdExtra: 5 },
+        { text: "wants", startFrame: 165, x: 420, y: 0, width: 145, holdExtra: 0 },
+        { text: "to", startFrame: 210, x: 600, y: 0, width: 50, holdExtra: 8 },
+        // Row 2: Reversed flow (right to left, camera moves LEFT) - "talk" then "to" then "the"
+        { text: "talk", startFrame: 270, x: 520, y: 100, width: 100, holdExtra: 0 },
+        { text: "to", startFrame: 315, x: 420, y: 100, width: 50, holdExtra: 0 },
+        { text: "the", startFrame: 360, x: 330, y: 100, width: 75, holdExtra: 5 },
         // Row 3: Big impact word - "World"
-        { text: "World", startFrame: 375, x: 360, y: 210, width: 200, holdExtra: 20 },
+        { text: "World", startFrame: 420, x: 360, y: 210, width: 200, holdExtra: 20 },
     ];
 
     // ============ CAMERA MOTION - GLIDING ON RAILS ============
@@ -66,15 +67,17 @@ export const ProblemScene: React.FC = () => {
             { frame: 110, x: 175, y: 0, z: 2 },      // Slide to "frontend"
             { frame: 155, x: 175, y: 0, z: 0 },      // Lock + pause
             { frame: 165, x: 420, y: 0, z: 3 },      // Slide to "wants"
-            { frame: 215, x: 420, y: 0, z: 0 },      // Lock + pause
-            { frame: 225, x: 490, y: 100, z: 4 },    // Curve down to "to"
-            { frame: 260, x: 490, y: 100, z: 0 },    // Lock
-            { frame: 270, x: 450, y: 100, z: 2 },    // Slide LEFT to "talk"
-            { frame: 305, x: 450, y: 100, z: 0 },    // Lock
-            { frame: 315, x: 360, y: 100, z: 2 },    // Slide LEFT to "the"
-            { frame: 365, x: 360, y: 100, z: 0 },    // Lock + pause
-            { frame: 375, x: 400, y: 210, z: 5 },    // Down to "World"
-            { frame: 460, x: 400, y: 210, z: 0 },    // Final lock
+            { frame: 200, x: 420, y: 0, z: 0 },      // Lock
+            { frame: 210, x: 600, y: 0, z: 2 },      // Slide to "to" (end of row 1)
+            { frame: 260, x: 600, y: 0, z: 0 },      // Lock + pause
+            { frame: 270, x: 520, y: 100, z: 4 },    // Curve down to "talk" (start of row 2)
+            { frame: 305, x: 520, y: 100, z: 0 },    // Lock
+            { frame: 315, x: 420, y: 100, z: 2 },    // Slide LEFT to "to"
+            { frame: 350, x: 420, y: 100, z: 0 },    // Lock
+            { frame: 360, x: 330, y: 100, z: 2 },    // Slide LEFT to "the"
+            { frame: 410, x: 330, y: 100, z: 0 },    // Lock + pause
+            { frame: 420, x: 400, y: 210, z: 5 },    // Down to "World"
+            { frame: 500, x: 400, y: 210, z: 0 },    // Final lock
         ];
 
         let prevKey = keyframes[0];
