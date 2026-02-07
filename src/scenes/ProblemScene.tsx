@@ -328,7 +328,7 @@ export const ProblemScene: React.FC = () => {
                 {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
                 {/* Refined Card Sequence: Text -> Zoom -> Burst -> Overwhelm -> Collapse */}
                 {(() => {
-                    const cardSeqStart = 120;
+                    const cardSeqStart = 150; // Delayed to fix overlap
                     if (frame < cardSeqStart) return null;
 
                     const localFrame = frame - cardSeqStart;
@@ -344,12 +344,19 @@ export const ProblemScene: React.FC = () => {
                     const typeProgress = interpolate(localFrame, [0, 60], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
                     const cursorBlink = localFrame % 30 < 15 ? 1 : 0;
 
-                    const typingText = "But managing";
-                    const currentTyped = typingText.substring(0, Math.round(typeProgress * typingText.length));
+                    // 1. Typewriter Logic (Full Sentence)
+                    const fullText = "But managing shouldn't be this hard.";
+                    // typing: 0-40 (But managing), 40-50 (pause), 50-110 (rest)
+                    const typeProgress1 = interpolate(localFrame, [0, 40], [0, 12], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const typeProgress2 = interpolate(localFrame, [50, 110], [0, 24], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const currentLength = Math.round(typeProgress1 + typeProgress2);
+                    const currentTyped = fullText.substring(0, currentLength);
 
                     // Card Disappear (Explode)
-                    const centerCardScale = interpolate(localFrame, [60, 70], [1, 1.5], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInExpo });
-                    const centerCardOpacity = interpolate(localFrame, [65, 75], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    // Card Presistence (No fade out, slight scale pulse)
+                    const centerCardScale = interpolate(localFrame, [0, 20], [0.8, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
+                    // Explicitly keep opacity 1 until collapse
+                    const centerCardOpacity = 1;
 
                     // 2. Dispersion Phase
                     const disperseProgress = interpolate(localFrame, [70, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
@@ -363,51 +370,59 @@ export const ProblemScene: React.FC = () => {
 
                     // Random Positions (Manually curated to avoid center overlap)
                     // Center is (0,0). Space +/- 250px clear.
+                    // Random Positions (Manually curated for chaos)
                     const dispersedPositions = [
-                        { x: -380, y: -220, type: "server", title: "Server Setup" },
-                        { x: 380, y: -200, type: "git", title: "Code Maint." },
-                        { x: -420, y: 80, type: "keys", title: "Credentials" },
-                        { x: 450, y: 120, type: "chart", title: "Observability" },
-                        { x: -280, y: 280, type: "logs", title: "Provider Logs" },
-                        { x: 320, y: 320, type: "server", title: "Hosting" },
-                        { x: 0, y: -350, type: "retry", title: "Retry Logic" },
-                        { x: 50, y: 400, type: "error", title: "Error Handling" },
+                        { x: -450, y: -280, type: "server", title: "Server Setup" },
+                        { x: 480, y: -250, type: "git", title: "Code Maint." },
+                        { x: -520, y: 50, type: "keys", title: "Credentials" },
+                        { x: 550, y: 80, type: "chart", title: "Observability" },
+                        { x: -280, y: 350, type: "logs", title: "Provider Logs" },
+                        { x: 350, y: 380, type: "server", title: "Hosting" },
+                        { x: -150, y: -400, type: "retry", title: "Retry Logic" },
+                        { x: 180, y: 450, type: "error", title: "Error Handling" },
+                        { x: -600, y: 200, type: "keys", title: "Env Vars" },
+                        { x: 600, y: -100, type: "git", title: "CI/CD" },
                     ];
 
                     return (
                         <div style={{ position: "absolute", inset: 0, perspective: 1000 }}>
                             {/* PHASE 1: CENTRAL TYPING CARD */}
+                            {/* PHASE 1: CENTRAL TYPING CARD (Longer, Persistent) */}
                             <div style={{
                                 position: "absolute", left: "50%", top: "50%",
-                                width: 300, height: 180, marginLeft: -150, marginTop: -90,
+                                width: 420, height: 240, marginLeft: -210, marginTop: -120, // Larger card specifically
                                 background: "#0F172A", // Dark terminal slate
-                                borderRadius: 12,
+                                borderRadius: 16,
                                 border: "1px solid rgba(255,255,255,0.15)",
-                                boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                                boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                transform: `scale(${centerCardScale})`,
-                                opacity: centerCardOpacity,
-                                zIndex: 50
+                                transform: `scale(${centerCardScale * (1 - collapseProgress)})`,
+                                zIndex: 50,
+                                opacity: collapseProgress > 0.95 ? 0 : 1
                             }}>
-                                <span style={{
-                                    fontFamily: "'Courier New', monospace",
-                                    fontSize: 28,
-                                    fontWeight: 700,
-                                    color: "#E2E8F0",
-                                    letterSpacing: -0.5
-                                }}>
-                                    {currentTyped}
+                                <div style={{ padding: 30, width: "100%" }}>
                                     <span style={{
-                                        opacity: cursorBlink,
-                                        color: "#10B981",
-                                        marginLeft: 2,
-                                        display: "inline-block",
-                                        width: 12,
-                                        height: 24,
-                                        background: "#10B981",
-                                        verticalAlign: "text-bottom"
-                                    }}></span>
-                                </span>
+                                        fontFamily: "'Courier New', monospace",
+                                        fontSize: 32,
+                                        fontWeight: 700,
+                                        color: "#E2E8F0",
+                                        letterSpacing: -0.5,
+                                        lineHeight: 1.4,
+                                        display: "block"
+                                    }}>
+                                        {currentTyped}
+                                        <span style={{
+                                            opacity: cursorBlink,
+                                            color: "#10B981",
+                                            marginLeft: 4,
+                                            display: "inline-block",
+                                            width: 14,
+                                            height: 32,
+                                            background: "#10B981",
+                                            verticalAlign: "middle"
+                                        }}></span>
+                                    </span>
+                                </div>
                             </div>
 
                             {/* PHASE 2: DISPERSED CARDS */}
@@ -442,19 +457,7 @@ export const ProblemScene: React.FC = () => {
                             {/* PHASE 3: FINAL TEXT ("shouldn't be this hard") */}
 
                             {/* Clean Text Overlay in Center void */}
-                            <div style={{
-                                position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)",
-                                textAlign: "center",
-                                opacity: finalTextOpacity * (1 - collapseProgress), // Fade out slightly at end
-                                zIndex: 40 // Below blinking card, above dispersed
-                            }}>
-                                <h2 style={{ fontSize: 42, color: "rgba(255,255,255,0.5)", margin: 0, fontWeight: 400 }}>
-                                    But managing
-                                </h2>
-                                <h2 style={{ fontSize: 56, color: "#FFFF", margin: "10px 0 0 0", fontWeight: 700, textShadow: "0 0 30px rgba(255,255,255,0.3)" }}>
-                                    shouldn’t be this hard.
-                                </h2>
-                            </div>
+                            {/* Removed Text Overlay - Text is now in Card */}
 
 
                             {/* Final Stack Glow (Collapse Impact) */}
