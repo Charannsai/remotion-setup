@@ -328,98 +328,96 @@ export const ProblemScene: React.FC = () => {
                 {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
                 {/* Refined Card Sequence: Text -> Zoom -> Burst -> Overwhelm -> Collapse */}
                 {(() => {
-                    const cardSeqStart = 150; // Delayed to fix overlap
+                    const cardSeqStart = 150;
                     if (frame < cardSeqStart) return null;
 
                     const localFrame = frame - cardSeqStart;
+                    const duration = 210;
 
-                    // TIMINGS
-                    // 0-70: Typewriter "But managing" (Center Card)
-                    // 70-130: Dispersion (Explosion + Scale Up)
-                    // 90-180: "Shouldn't be this hard" (Text Reveal)
-                    // 180-200: Hold/Drift
-                    // 200-240: Collapse
+                    // 1. Camera / Global Zoom (2.2x -> 1x)
+                    const globalScale = interpolate(localFrame, [60, 110], [2.2, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
 
-                    // 1. Typewriter Phase
-                    const typeProgress = interpolate(localFrame, [0, 60], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-                    const cursorBlink = localFrame % 30 < 15 ? 1 : 0;
 
-                    // 1. Typewriter Logic (Full Sentence)
-                    const fullText = "But managing shouldn't be this hard.";
-                    // typing: 0-40 (But managing), 40-50 (pause), 50-110 (rest)
-                    const typeProgress1 = interpolate(localFrame, [0, 40], [0, 12], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-                    const typeProgress2 = interpolate(localFrame, [50, 110], [0, 24], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    // 2. Typewriter Logic (Full Sentence)
+                    const fullText = "But Managing shouldn't be this hard.";
+                    const typeProgress1 = interpolate(localFrame, [0, 50], [0, 13], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const typeProgress2 = interpolate(localFrame, [60, 110], [0, 23], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
                     const currentLength = Math.round(typeProgress1 + typeProgress2);
                     const currentTyped = fullText.substring(0, currentLength);
+                    const cursorBlink = localFrame % 30 < 15 ? 1 : 0;
 
-                    // Card Disappear (Explode)
-                    // Card Presistence (No fade out, slight scale pulse)
-                    const centerCardScale = interpolate(localFrame, [0, 20], [0.8, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
-                    // Explicitly keep opacity 1 until collapse
+                    // 3. Central Card Presence
                     const centerCardOpacity = 1;
+                    const centerCardScale = 1; // Animation handled by globalScale
 
-                    // 2. Dispersion Phase
-                    const disperseProgress = interpolate(localFrame, [70, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
-                    const cardScale = interpolate(localFrame, [70, 120], [0.2, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
+                    // 4. Dispersion Logic
+                    const disperseProgress = interpolate(localFrame, [60, 110], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
+                    const driftProgress = interpolate(localFrame, [110, 170], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-                    // 3. Text Completion Phase
-                    const finalTextOpacity = interpolate(localFrame, [90, 120], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    // 5. Collapse Phase
+                    const collapseProgress = interpolate(localFrame, [170, 210], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
 
-                    // 4. Collapse Phase
-                    const collapseProgress = interpolate(localFrame, [200, 240], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
-
-                    // Random Positions (Manually curated to avoid center overlap)
-                    // Center is (0,0). Space +/- 250px clear.
-                    // Random Positions (Manually curated for chaos)
+                    // Premium Ring Layout
                     const dispersedPositions = [
-                        { x: -450, y: -280, type: "server", title: "Server Setup" },
-                        { x: 480, y: -250, type: "git", title: "Code Maint." },
-                        { x: -520, y: 50, type: "keys", title: "Credentials" },
-                        { x: 550, y: 80, type: "chart", title: "Observability" },
-                        { x: -280, y: 350, type: "logs", title: "Provider Logs" },
-                        { x: 350, y: 380, type: "server", title: "Hosting" },
-                        { x: -150, y: -400, type: "retry", title: "Retry Logic" },
-                        { x: 180, y: 450, type: "error", title: "Error Handling" },
-                        { x: -600, y: 200, type: "keys", title: "Env Vars" },
-                        { x: 600, y: -100, type: "git", title: "CI/CD" },
+                        // Inner Ring (Closer)
+                        { x: -450, y: -200, type: "server", title: "Server Setup" },
+                        { x: 450, y: -200, type: "git", title: "Version Control" },
+                        { x: -450, y: 200, type: "keys", title: "API Credentials" },
+                        { x: 450, y: 200, type: "chart", title: "Observability" },
+                        // Outer Ring (Further)
+                        { x: 0, y: -380, type: "hosting", title: "Cloud Hosting" },
+                        { x: 0, y: 380, type: "logs", title: "Active Logs" },
+                        { x: -700, y: 0, type: "retry", title: "Retry Logic" },
+                        { x: 700, y: 0, type: "error", title: "Error Boundaries" },
                     ];
 
                     return (
-                        <div style={{ position: "absolute", inset: 0, perspective: 1000 }}>
+                        <div style={{
+                            position: "absolute", inset: 0,
+                            perspective: 2000,
+                            transform: `scale(${globalScale})`,
+                            transformOrigin: "center center"
+                        }}>
+
                             {/* PHASE 1: CENTRAL TYPING CARD */}
                             {/* PHASE 1: CENTRAL TYPING CARD (Longer, Persistent) */}
                             <div style={{
                                 position: "absolute", left: "50%", top: "50%",
-                                width: 420, height: 240, marginLeft: -210, marginTop: -120, // Larger card specifically
-                                background: "#0F172A", // Dark terminal slate
-                                borderRadius: 16,
-                                border: "1px solid rgba(255,255,255,0.15)",
-                                boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
+                                width: 500, height: 280, marginLeft: -250, marginTop: -140, // Expanded for impact
+                                background: "rgba(15, 23, 42, 0.6)", // Glassmorphic transparency
+                                borderRadius: 24,
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                boxShadow: "0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                transform: `scale(${centerCardScale * (1 - collapseProgress)})`,
+                                transform: `scale(${centerCardScale * (1 - collapseProgress * 0.5)})`,
+                                opacity: collapseProgress > 0.95 ? 0 : 1,
                                 zIndex: 50,
-                                opacity: collapseProgress > 0.95 ? 0 : 1
+                                backdropFilter: "blur(24px)"
                             }}>
-                                <div style={{ padding: 30, width: "100%" }}>
+                                <div style={{ padding: 40, width: "100%", textAlign: "left" }}>
                                     <span style={{
-                                        fontFamily: "'Courier New', monospace",
-                                        fontSize: 32,
+                                        fontFamily, // Inter
+                                        fontSize: 48,
                                         fontWeight: 700,
-                                        color: "#E2E8F0",
-                                        letterSpacing: -0.5,
-                                        lineHeight: 1.4,
-                                        display: "block"
+                                        color: "#F8FAFC",
+                                        letterSpacing: "-0.03em",
+                                        lineHeight: 1.2,
+                                        display: "inline",
+                                        textShadow: "0 4px 12px rgba(0,0,0,0.3)"
                                     }}>
                                         {currentTyped}
                                         <span style={{
                                             opacity: cursorBlink,
-                                            color: "#10B981",
+                                            color: "#6366F1", // Indigo cursor
                                             marginLeft: 4,
                                             display: "inline-block",
-                                            width: 14,
-                                            height: 32,
-                                            background: "#10B981",
-                                            verticalAlign: "middle"
+                                            width: 4,
+                                            height: 48,
+                                            background: "#6366F1",
+                                            verticalAlign: "bottom",
+                                            borderRadius: 2,
+                                            boxShadow: "0 0 10px #6366F1"
                                         }}></span>
                                     </span>
                                 </div>
@@ -431,23 +429,26 @@ export const ProblemScene: React.FC = () => {
                                 const currentX = pos.x * disperseProgress;
                                 const currentY = pos.y * disperseProgress;
 
-                                // Collapse logic: Move back to center
-                                const finalX = currentX * (1 - collapseProgress);
-                                const finalY = currentY * (1 - collapseProgress);
+                                // Drift
+                                const driftX = Math.sin(time * 0.5 + i) * 15 * driftProgress;
+                                const driftY = Math.cos(time * 0.5 + i) * 15 * driftProgress;
 
-                                // Breathing/Drift
-                                const driftX = Math.sin(time + i) * 10 * (1 - collapseProgress);
-                                const driftY = Math.cos(time + i) * 10 * (1 - collapseProgress);
+                                // Collapse logic: Cards move back to center + drift
+                                const finalX = (currentX + driftX) * (1 - collapseProgress);
+                                const finalY = (currentY + driftY) * (1 - collapseProgress);
+
+                                // Scale logic: Cards scale up as they explode
+                                const scale = interpolate(localFrame, [60, 90 + i * 5], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
 
                                 return (
                                     <div key={i} style={{
                                         position: "absolute",
                                         left: "50%", top: "50%",
-                                        transform: `translate(${finalX + driftX}px, ${finalY + driftY}px) scale(${cardScale * (1 - collapseProgress * 0.5)})`,
+                                        transform: `translate(${finalX}px, ${finalY}px) scale(${scale * (1 - collapseProgress)})`,
                                         zIndex: 10,
-                                        opacity: collapseProgress > 0.95 ? 0 : 1
+                                        opacity: collapseProgress > 0.9 ? 0 : 1
                                     }}>
-                                        <div style={{ marginLeft: -70, marginTop: -45 }}>
+                                        <div style={{ marginLeft: -120, marginTop: -80 }}>
                                             <MicroCard type={pos.type as any} title={pos.title} opacity={1} />
                                         </div>
                                     </div>
@@ -455,19 +456,16 @@ export const ProblemScene: React.FC = () => {
                             })}
 
                             {/* PHASE 3: FINAL TEXT ("shouldn't be this hard") */}
-
-                            {/* Clean Text Overlay in Center void */}
                             {/* Removed Text Overlay - Text is now in Card */}
-
 
                             {/* Final Stack Glow (Collapse Impact) */}
                             {collapseProgress > 0.9 && (
                                 <div style={{
                                     position: "absolute", left: "50%", top: "50%",
-                                    width: 140, height: 90, marginLeft: -70, marginTop: -45,
+                                    width: 500, height: 280, marginLeft: -250, marginTop: -140,
                                     background: "rgba(255,255,255,0.1)",
-                                    boxShadow: "0 0 80px rgba(167,139,250,0.6)",
-                                    borderRadius: 8,
+                                    boxShadow: "0 0 120px rgba(99,102,241,0.8)",
+                                    borderRadius: 24,
                                     opacity: interpolate(collapseProgress, [0.9, 1], [0, 1]),
                                     transform: "scale(1.1)"
                                 }} />
