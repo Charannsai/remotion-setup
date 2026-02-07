@@ -17,7 +17,7 @@ import { MicroCard } from "../components/MicroCard";
 const easeOutExpo = Easing.out(Easing.exp);
 const easeInOutQuart = Easing.bezier(0.76, 0, 0.24, 1);
 const easeOutBack = Easing.out(Easing.back(1.4));
-const easeInExpo = Easing.in(Easing.exp);
+
 
 export const ProblemScene: React.FC = () => {
     const frame = useCurrentFrame();
@@ -25,15 +25,15 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 360;  // Extended for Refined Card Sequence
-    const scene2Start = 360;
-    const scene2End = 480;
-    const scene3Start = 480;
-    const scene3End = 600;
-    const scene4Start = 600;
-    const scene4End = 800;
-    const scene5Start = 800;
-    const scene5End = 1020;
+    const scene1End = 420;  // Extended for Refined Card Sequence
+    const scene2Start = 420;
+    const scene2End = 540;
+    const scene3Start = 540;
+    const scene3End = 660;
+    const scene4Start = 660;
+    const scene4End = 860;
+    const scene5Start = 860;
+    const scene5End = 1080;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -186,9 +186,7 @@ export const ProblemScene: React.FC = () => {
         const fadeOut = interpolate(frame, [scene1End - 20, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
 
-        // Simple parallax offset (no blur - too expensive)
-        const bgOffsetX = camera.x * 0.15;
-        const bgOffsetY = camera.y * 0.15;
+
 
         // Hide camera container as text drops (start of Card Sequence)
         const cameraContainerOpacity = interpolate(
@@ -201,15 +199,28 @@ export const ProblemScene: React.FC = () => {
 
 
         return (
-            <div style={{ position: "absolute", width: "100%", height: "100%", opacity: fadeOut, overflow: "hidden", background: "#06060a" }}>
+            <div style={{ position: "absolute", width: "100%", height: "100%", opacity: fadeOut, overflow: "hidden", background: "#05070F" }}>
 
-                {/* ========== SIMPLE AMBIENT BACKGROUND ========== */}
+                {/* ========== CINEMATIC BACKGROUND ========== */}
+                {/* 1. Base Gradient: Deep Navy to Black */}
                 <div
                     style={{
                         position: "absolute",
                         width: "100%",
                         height: "100%",
-                        background: `radial-gradient(circle at ${50 - bgOffsetX * 0.1}% ${50 + bgOffsetY * 0.1}%, rgba(99,102,241,0.05) 0%, transparent 50%)`,
+                        background: "radial-gradient(circle at 50% 50%, rgba(10, 25, 47, 0.4) 0%, rgba(5, 7, 15, 0) 70%)",
+                    }}
+                />
+
+                {/* 2. Noise Overlay (Grain) */}
+                <div
+                    style={{
+                        position: "absolute",
+                        width: "100%",
+                        height: "100%",
+                        opacity: 0.03,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                        pointerEvents: "none",
                     }}
                 />
 
@@ -324,48 +335,78 @@ export const ProblemScene: React.FC = () => {
 
 
                 {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
-                {/* Replaces Globe with Card Animation */}
-                {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
                 {/* Refined Card Sequence: Text -> Zoom -> Burst -> Overwhelm -> Collapse */}
                 {(() => {
                     const cardSeqStart = 150;
                     if (frame < cardSeqStart) return null;
 
                     const localFrame = frame - cardSeqStart;
-                    const duration = 210;
-
-                    // 1. Camera / Global Zoom (2.2x -> 1x)
-                    const globalScale = interpolate(localFrame, [60, 110], [2.2, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
 
 
-                    // 2. Typewriter Logic (Full Sentence)
-                    const fullText = "But Managing shouldn't be this hard.";
-                    const typeProgress1 = interpolate(localFrame, [0, 50], [0, 13], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-                    const typeProgress2 = interpolate(localFrame, [60, 110], [0, 23], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    // == 1. Camera Motion (Macro -> Wide) ==
+                    // Start VERY close (Macro) on the text start position
+                    // Ease out to full view
+                    const zoomProgress = interpolate(localFrame, [50, 110], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
 
-                    const currentLength = Math.round(typeProgress1 + typeProgress2);
-                    const currentTyped = fullText.substring(0, currentLength);
-                    const cursorBlink = localFrame % 30 < 15 ? 1 : 0;
+                    // Combined motion variables
+                    const cardScale = interpolate(zoomProgress, [0, 1], [2.2, 1.0]);
+                    const cardTranslateX = interpolate(zoomProgress, [0, 1], [350, 0]);
+                    const cardTranslateY = interpolate(zoomProgress, [0, 1], [80, 0]);
+                    const cardRotateY = interpolate(zoomProgress, [0, 1], [-15, 0]);
+                    const cardRotateX = interpolate(zoomProgress, [0, 1], [5, 0]);
 
-                    // 3. Central Card Presence
-                    const centerCardOpacity = 1;
-                    const centerCardScale = 1; // Animation handled by globalScale
 
-                    // 4. Dispersion Logic
-                    const disperseProgress = interpolate(localFrame, [60, 110], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
-                    const driftProgress = interpolate(localFrame, [110, 170], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-                    // 5. Collapse Phase
-                    const collapseProgress = interpolate(localFrame, [170, 210], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
 
-                    // Premium Ring Layout
+
+
+
+                    // Legacy variable bridge (to avoid breaking JSX before update)
+                    const globalScale = 1;
+                    const translateX = cardTranslateX;
+                    const translateY = cardTranslateY;
+                    const rotateX = cardRotateX;
+                    const rotateY = cardRotateY;
+                    const entryScale = cardScale;
+
+
+                    // == 2. Advanced Typewriter Logic (Correction Phase) ==
+                    const phase1Text = "But Managing";
+                    const phase2Text = "Integrations shouldn't be this hard.";
+
+                    let displayText = "";
+
+                    if (localFrame < 50) {
+                        // Typing Phase 1
+                        const charIndex = Math.round(interpolate(localFrame, [0, 40], [0, phase1Text.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+                        displayText = phase1Text.substring(0, charIndex);
+                    } else if (localFrame < 80) {
+                        // Pause (Zooming out)
+                        displayText = phase1Text;
+                    } else if (localFrame < 100) {
+                        // Deleting Phase
+                        const deleteIndex = Math.round(interpolate(localFrame, [80, 100], [phase1Text.length, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+                        displayText = phase1Text.substring(0, deleteIndex);
+                    } else {
+                        // Typing Phase 2
+                        const typeIndex = Math.round(interpolate(localFrame, [100, 170], [0, phase2Text.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.quad) }));
+                        displayText = phase2Text.substring(0, typeIndex);
+                    }
+
+                    const cursorBlink = localFrame % 35 < 18 ? 1 : 0;
+
+                    // == 3. Dispersion Logic ==
+                    const disperseProgress = interpolate(localFrame, [160, 210], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
+
+                    // Collapse Phase (Fade out at end)
+                    const collapseProgress = interpolate(localFrame, [200, 240], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+
+                    // Premium Ring Layout for Dispersion
                     const dispersedPositions = [
-                        // Inner Ring (Closer)
                         { x: -450, y: -200, type: "server", title: "Server Setup" },
                         { x: 450, y: -200, type: "git", title: "Version Control" },
                         { x: -450, y: 200, type: "keys", title: "API Credentials" },
                         { x: 450, y: 200, type: "chart", title: "Observability" },
-                        // Outer Ring (Further)
                         { x: 0, y: -380, type: "hosting", title: "Cloud Hosting" },
                         { x: 0, y: 380, type: "logs", title: "Active Logs" },
                         { x: -700, y: 0, type: "retry", title: "Retry Logic" },
@@ -375,76 +416,87 @@ export const ProblemScene: React.FC = () => {
                     return (
                         <div style={{
                             position: "absolute", inset: 0,
-                            perspective: 2000,
+                            perspective: 2000, // Deep perspective
                             transform: `scale(${globalScale})`,
                             transformOrigin: "center center"
                         }}>
 
-                            {/* PHASE 1: CENTRAL TYPING CARD */}
-                            {/* PHASE 1: CENTRAL TYPING CARD (Longer, Persistent) */}
+                            {/* PHASE 1: THE GLASSMORPHIC CARD */}
                             <div style={{
                                 position: "absolute", left: "50%", top: "50%",
-                                width: 500, height: 280, marginLeft: -250, marginTop: -140, // Expanded for impact
-                                background: "rgba(15, 23, 42, 0.6)", // Glassmorphic transparency
-                                borderRadius: 24,
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                boxShadow: "0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05)",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                transform: `scale(${centerCardScale * (1 - collapseProgress * 0.5)})`,
+                                width: 540, height: 320, marginLeft: -270, marginTop: -160,
+                                transform: `
+                                    translateX(${translateX}px) 
+                                    translateY(${translateY}px) 
+                                    rotateX(${rotateX}deg) 
+                                    rotateY(${rotateY}deg) 
+                                    scale(${entryScale * (1 - disperseProgress * 0.2)})
+                                `,
                                 opacity: collapseProgress > 0.95 ? 0 : 1,
                                 zIndex: 50,
-                                backdropFilter: "blur(24px)"
+                                transformStyle: "preserve-3d",
                             }}>
-                                <div style={{ padding: 40, width: "100%", textAlign: "left" }}>
-                                    <span style={{
-                                        fontFamily, // Inter
-                                        fontSize: 48,
-                                        fontWeight: 700,
-                                        color: "#F8FAFC",
-                                        letterSpacing: "-0.03em",
-                                        lineHeight: 1.2,
-                                        display: "inline",
-                                        textShadow: "0 4px 12px rgba(0,0,0,0.3)"
-                                    }}>
-                                        {currentTyped}
+                                {/* Card Body */}
+                                <div style={{
+                                    width: "100%", height: "100%",
+                                    borderRadius: 30, // 28-32px
+                                    background: "rgba(255, 255, 255, 0.04)",
+                                    backdropFilter: "blur(50px)", // 40-60px
+                                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                                    backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)",
+                                    boxShadow: `
+                                        0 20px 40px -10px rgba(0,0,0,0.3), 
+                                        0 0 0 1px rgba(255,255,255,0.02) inset
+                                    `,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    overflow: "hidden"
+                                }}>
+                                    {/* Inner Gradient Soft Touch */}
+                                    <div style={{
+                                        position: "absolute", inset: 0,
+                                        background: "radial-gradient(circle at 10% 10%, rgba(255,255,255,0.03), transparent 60%)",
+                                        pointerEvents: "none"
+                                    }} />
+
+                                    <div style={{ padding: 48, width: "100%", textAlign: "left", position: "relative", zIndex: 2 }}>
                                         <span style={{
-                                            opacity: cursorBlink,
-                                            color: "#6366F1", // Indigo cursor
-                                            marginLeft: 4,
-                                            display: "inline-block",
-                                            width: 4,
-                                            height: 48,
-                                            background: "#6366F1",
-                                            verticalAlign: "bottom",
-                                            borderRadius: 2,
-                                            boxShadow: "0 0 10px #6366F1"
-                                        }}></span>
-                                    </span>
+                                            fontFamily,
+                                            fontSize: 54, // Larger
+                                            fontWeight: 600, // 600-700
+                                            color: "rgba(255, 255, 255, 0.95)", // 95% opacity
+                                            letterSpacing: "-0.04em", // Tightened
+                                            lineHeight: 1.15,
+                                            display: "inline",
+                                        }}>
+                                            {displayText}
+                                            <span style={{
+                                                opacity: cursorBlink,
+                                                color: "#60A5FA", // Soft blue
+                                                marginLeft: 4,
+                                                display: "inline-block",
+                                                width: 4,
+                                                height: 54,
+                                                background: "#60A5FA",
+                                                verticalAlign: "bottom",
+                                                borderRadius: 2,
+                                                boxShadow: "0 0 12px rgba(96, 165, 250, 0.6)"
+                                            }}></span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* PHASE 2: DISPERSED CARDS */}
                             {disperseProgress > 0.01 && dispersedPositions.map((pos, i) => {
-                                // interpolate position from Center (0,0) to Target (pos.x, pos.y)
                                 const currentX = pos.x * disperseProgress;
                                 const currentY = pos.y * disperseProgress;
-
-                                // Drift
-                                const driftX = Math.sin(time * 0.5 + i) * 15 * driftProgress;
-                                const driftY = Math.cos(time * 0.5 + i) * 15 * driftProgress;
-
-                                // Collapse logic: Cards move back to center + drift
-                                const finalX = (currentX + driftX) * (1 - collapseProgress);
-                                const finalY = (currentY + driftY) * (1 - collapseProgress);
-
-                                // Scale logic: Cards scale up as they explode
-                                const scale = interpolate(localFrame, [60, 90 + i * 5], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
+                                const scale = interpolate(localFrame, [160, 190 + i * 5], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack });
 
                                 return (
                                     <div key={i} style={{
                                         position: "absolute",
                                         left: "50%", top: "50%",
-                                        transform: `translate(${finalX}px, ${finalY}px) scale(${scale * (1 - collapseProgress)})`,
+                                        transform: `translate(${currentX}px, ${currentY}px) scale(${scale * (1 - collapseProgress)})`,
                                         zIndex: 10,
                                         opacity: collapseProgress > 0.9 ? 0 : 1
                                     }}>
@@ -455,34 +507,12 @@ export const ProblemScene: React.FC = () => {
                                 );
                             })}
 
-                            {/* PHASE 3: FINAL TEXT ("shouldn't be this hard") */}
-                            {/* Removed Text Overlay - Text is now in Card */}
-
-                            {/* Final Stack Glow (Collapse Impact) */}
-                            {collapseProgress > 0.9 && (
-                                <div style={{
-                                    position: "absolute", left: "50%", top: "50%",
-                                    width: 500, height: 280, marginLeft: -250, marginTop: -140,
-                                    background: "rgba(255,255,255,0.1)",
-                                    boxShadow: "0 0 120px rgba(99,102,241,0.8)",
-                                    borderRadius: 24,
-                                    opacity: interpolate(collapseProgress, [0.9, 1], [0, 1]),
-                                    transform: "scale(1.1)"
-                                }} />
-                            )}
                         </div>
                     );
                 })()}
 
                 {/* ========== SIMPLE VIGNETTE ========== */}
-                <div
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(6,6,10,0.8) 100%)",
-                        pointerEvents: "none",
-                    }}
-                />
+                {/* ========== REMOVED VIGNETTE FOR CLEAN AESTHETIC ========== */}
             </div >
         );
     };
