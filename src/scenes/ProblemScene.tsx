@@ -6,6 +6,7 @@ const { fontFamily } = loadFont("normal", {
     weights: ["300", "400", "500", "600", "700"],
     subsets: ["latin"],
 });
+import { MicroCard } from "../components/MicroCard";
 
 // ============================================
 // PROBLEM SCENE - Premium Cinematic Typography
@@ -16,6 +17,7 @@ const { fontFamily } = loadFont("normal", {
 const easeOutExpo = Easing.out(Easing.exp);
 const easeInOutQuart = Easing.bezier(0.76, 0, 0.24, 1);
 const easeOutBack = Easing.out(Easing.back(1.4));
+const easeInExpo = Easing.in(Easing.exp);
 
 export const ProblemScene: React.FC = () => {
     const frame = useCurrentFrame();
@@ -23,15 +25,15 @@ export const ProblemScene: React.FC = () => {
     const time = frame / fps;
 
     // ============ SCENE TIMING ============
-    const scene1End = 330;  // Extended for Card Sequence (7s)
-    const scene2Start = 330;
-    const scene2End = 450;
-    const scene3Start = 450;
-    const scene3End = 570;
-    const scene4Start = 570;
-    const scene4End = 770;
-    const scene5Start = 770;
-    const scene5End = 990;
+    const scene1End = 360;  // Extended for Refined Card Sequence
+    const scene2Start = 360;
+    const scene2End = 480;
+    const scene3Start = 480;
+    const scene3End = 600;
+    const scene4Start = 600;
+    const scene4End = 800;
+    const scene5Start = 800;
+    const scene5End = 1020;
 
     const currentScene =
         frame < scene1End ? 1 :
@@ -323,95 +325,128 @@ export const ProblemScene: React.FC = () => {
 
                 {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
                 {/* Replaces Globe with Card Animation */}
+                {/* ========== OPERATIONAL OVERHEAD SEQUENCES ========== */}
+                {/* Refined Card Sequence: Text -> Zoom -> Burst -> Overwhelm -> Collapse */}
                 {(() => {
                     const cardSeqStart = 120;
                     if (frame < cardSeqStart) return null;
 
                     const localFrame = frame - cardSeqStart;
 
-                    // Phases
-                    // 0-45: Stack breathing (1.5s)
-                    // 45-105: Expansion (2s)
-                    // 105-150: Overload / Drift (1.5s)
-                    // 150-210: Collapse (2s)
+                    // TIMING BREAKDOWN
+                    // 0-60: Text Intro ("But managing...")
+                    // 60-90: Zoom Through & Blur
+                    // 90-150: Card Burst & Expansion
+                    // 150-200: Overwhelm (Drift & Zoom Out)
+                    // 200-240: Collapse
 
-                    const expandProgress = interpolate(localFrame, [45, 105], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
-                    const driftProgress = interpolate(localFrame, [105, 150], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-                    const collapseProgress = interpolate(localFrame, [150, 210], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+                    // 1. Text Phase
+                    const text1In = interpolate(localFrame, [0, 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const text2In = interpolate(localFrame, [30, 50], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-                    // Center Text Opacity
-                    const textOpacity = interpolate(localFrame, [110, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-                    const textFadeOut = interpolate(localFrame, [190, 210], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    // Zoom Through Transition
+                    const textZoom = interpolate(localFrame, [60, 90], [1, 20], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInExpo });
+                    const textBlur = interpolate(localFrame, [60, 80], [0, 20], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const textOpacity = interpolate(localFrame, [70, 90], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-                    const cards = [
-                        "Server Setup", "Code Maintenance", "Hosting", "Credentials",
-                        "Observability", "Provider Logs", "Error Handling", "Retry Logic"
+                    // 2. Card Phase
+                    const burstProgress = interpolate(localFrame, [90, 140], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutExpo });
+                    const driftProgress = interpolate(localFrame, [150, 200], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                    const collapseProgress = interpolate(localFrame, [200, 240], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeInOutQuart });
+
+                    const cardData = [
+                        { title: "Server Setup", type: "server", angle: 0 },
+                        { title: "Code Maint.", type: "git", angle: 45 },
+                        { title: "Credentials", type: "keys", angle: 90 },
+                        { title: "Observability", type: "chart", angle: 135 },
+                        { title: "Provider Logs", type: "logs", angle: 180 },
+                        { title: "Hosting", type: "server", angle: 225 },
+                        { title: "Retry Logic", type: "retry", angle: 270 },
+                        { title: "Error Handling", type: "error", angle: 315 },
                     ];
 
                     return (
                         <div style={{ position: "absolute", inset: 0 }}>
-                            {/* Central Text */}
+                            {/* Text Container */}
                             <div style={{
-                                position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                                opacity: textOpacity * textFadeOut, zIndex: 10
+                                position: "absolute", inset: 0,
+                                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                                transform: `scale(${textZoom})`,
+                                filter: `blur(${textBlur}px)`,
+                                opacity: textOpacity,
+                                zIndex: 20,
+                                transformOrigin: "center center"
                             }}>
-                                <h2 style={{ fontSize: 52, fontWeight: 700, color: "#FFF", margin: 0, marginBottom: 16, textAlign: "center" }}>
-                                    But managing the API integrations
+                                <h2 style={{
+                                    fontSize: 56, fontWeight: 700, color: "#FFF",
+                                    margin: "0 0 16px 0", opacity: text1In,
+                                    textShadow: "0 0 40px rgba(0,0,0,0.5)"
+                                }}>
+                                    But managing API integrations
                                 </h2>
-                                <h3 style={{ fontSize: 42, fontWeight: 400, color: "rgba(255,255,255,0.7)", margin: 0, textAlign: "center" }}>
+                                <h3 style={{
+                                    fontSize: 42, fontWeight: 400, color: "rgba(255,255,255,0.8)",
+                                    margin: 0, opacity: text2In
+                                }}>
                                     shouldn’t be this hard.
                                 </h3>
                             </div>
 
-                            {/* Cards */}
-                            {cards.map((card, i) => {
-                                const angle = (i / cards.length) * Math.PI * 2;
-                                const radius = 380; // Distance from center
+                            {/* Cards Container - Perspective for depth */}
+                            <div style={{
+                                position: "absolute", inset: 0,
+                                perspective: 1000,
+                                transform: `scale(${interpolate(driftProgress, [0, 1], [1, 0.9])})`, // Zoom out slightly during overwhelm
+                                opacity: interpolate(localFrame, [85, 95], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
+                            }}>
+                                {cardData.map((card, i) => {
+                                    const rad = (card.angle * Math.PI) / 180;
+                                    const radius = 420;
 
-                                // Expansion
-                                const xExp = Math.cos(angle) * radius * expandProgress;
-                                const yExp = Math.sin(angle) * radius * expandProgress;
+                                    // Burst + Drift
+                                    const dist = radius * burstProgress + (driftProgress * 40);
 
-                                // Drift (outward slightly)
-                                const xDrift = Math.cos(angle) * 30 * driftProgress;
-                                const yDrift = Math.sin(angle) * 30 * driftProgress;
+                                    // Collapse: Interpolate to 0
+                                    const currentDist = dist * (1 - collapseProgress);
 
-                                // Collapse (back to center)
-                                // We interpolate from current position back to 0 based on collapseProgress
-                                const currentX = xExp + xDrift;
-                                const currentY = yExp + yDrift;
-                                const finalX = currentX * (1 - collapseProgress);
-                                const finalY = currentY * (1 - collapseProgress);
+                                    const x = Math.cos(rad) * currentDist;
+                                    const y = Math.sin(rad) * currentDist;
 
-                                // Breathing (stack phase)
-                                const breath = Math.sin(time * 2 + i) * 2; // Slight vertical oscillation
-                                const stackY = expandProgress < 0.1 ? breath : 0;
+                                    // Parallax/Depth: varies by index
+                                    const zDepth = (i % 2 === 0 ? 40 : -40) * (1 - collapseProgress);
+                                    const scale = (i % 2 === 0 ? 1.05 : 0.95);
 
-                                // Opacity check (fade out during collapse? No, stack visible)
-                                const cardOpacity = 1;
+                                    // Collapse snap effect
+                                    const snapScale = collapseProgress > 0.8 ? 1 - (collapseProgress - 0.8) * 2 : 1;
 
-                                return (
-                                    <div key={i} style={{
-                                        position: "absolute",
-                                        left: "50%", top: "50%",
-                                        width: 160, height: 100,
-                                        marginLeft: -80, marginTop: -50,
-                                        transform: `translate(${finalX}px, ${finalY + stackY}px) scale(${1 - collapseProgress * 0.1})`,
-                                        background: "rgba(255,255,255,0.03)",
-                                        backdropFilter: "blur(10px)",
-                                        border: "1px solid rgba(255,255,255,0.08)",
-                                        borderRadius: 8,
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-                                        opacity: cardOpacity,
-                                        zIndex: cards.length - i // Stack order
-                                    }}>
-                                        <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 500, textAlign: "center", opacity: expandProgress }}>
-                                            {card}
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                                    return (
+                                        <div key={i} style={{
+                                            position: "absolute",
+                                            left: "50%", top: "50%",
+                                            width: 140, height: 90,
+                                            marginLeft: -70, marginTop: -45,
+                                            transform: `translate3d(${x}px, ${y}px, ${zDepth}px) scale(${scale * snapScale})`,
+                                            zIndex: 10 - i,
+                                            opacity: collapseProgress > 0.95 ? 0 : 1 // Hide at very end of collapse
+                                        }}>
+                                            <MicroCard type={card.type as any} title={card.title} opacity={1} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Final Stack Glow (Collapse Impact) */}
+                            {collapseProgress > 0.9 && (
+                                <div style={{
+                                    position: "absolute", left: "50%", top: "50%",
+                                    width: 140, height: 90, marginLeft: -70, marginTop: -45,
+                                    background: "rgba(255,255,255,0.1)",
+                                    boxShadow: "0 0 60px rgba(167,139,250,0.4)",
+                                    borderRadius: 8,
+                                    opacity: interpolate(collapseProgress, [0.9, 1], [0, 1]),
+                                    transform: "scale(1.05)"
+                                }} />
+                            )}
                         </div>
                     );
                 })()}
