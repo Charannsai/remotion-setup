@@ -183,41 +183,120 @@ export const ProblemScene: React.FC = () => {
     // ============ SCENE 1: CINEMATIC TYPOGRAPHY ============
 
     // Transition timings (after World appears at frame 420)
-    const worldFlipStart = 460;
-    const worldFlipEnd = 490;
-    const butPopupStart = 485;
-    const globeStart = 530;
-
+    // Frame 430: "But the world" cinematic drop begins  
+    // Frame 430-570: Globe construction sequence
+    const textDropStart = 430;        // Text enters from above
+    const textImpactFrame = 460;      // Text lands with micro-shake
+    const horizonGlowStart = 430;     // Step 1: Bottom edge glow
+    const scanLineStart = 445;        // Step 2: Scan line draws latitude
+    const longitudeStart = 470;       // Step 3: Longitude lines form  
+    const rimLightStart = 500;        // Step 4: Rim light on upper arc
+    const nodeActivationStart = 525;   // Step 5: Node pulses appear
 
     const renderScene1 = () => {
-        const fadeOut = interpolate(frame, [scene1End - 60, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const fadeOut = interpolate(frame, [scene1End - 20, scene1End], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
 
         // Simple parallax offset (no blur - too expensive)
         const bgOffsetX = camera.x * 0.15;
         const bgOffsetY = camera.y * 0.15;
 
-        // ===== WORLD 3D FLIP ANIMATION =====
-        const worldFlipProgress = interpolate(
+        // ===== "BUT THE WORLD" GRAVITY DROP =====
+        // Fast acceleration first 40%, strong ease-out landing
+        const dropProgress = interpolate(
             frame,
-            [worldFlipStart, worldFlipEnd],
+            [textDropStart, textImpactFrame],
             [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOutBack }
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
-        const worldRotateX = worldFlipProgress * 360; // Full rotation
 
 
-        // ===== GLOBE ANIMATION =====
-        const globeProgress = spring({
-            frame: frame - globeStart,
-            fps,
-            config: { damping: 20, stiffness: 60 },
-        });
-        const globeRotation = time * 15; // Slow continuous rotation
+        // Custom gravity easing: fast start (40%), ease-out landing
+        const gravityEase = dropProgress < 0.4
+            ? dropProgress * dropProgress * 2.5  // Accelerate in first 40%
+            : 0.4 + (1 - Math.pow(1 - (dropProgress - 0.4) / 0.6, 3)) * 0.6; // Ease out remaining 60%
 
-        // Hide camera container after flip starts
+        const textY = interpolate(gravityEase, [0, 1], [-200, 0]); // Drop from above frame
+
+        // Motion blur during descent (6px vertical blur)
+        const motionBlurAmount = dropProgress < 0.8
+            ? interpolate(dropProgress, [0, 0.5, 0.8], [0, 6, 2])
+            : 0;
+
+        // Micro vibration on impact (1.5px shake, ~70ms = 2-3 frames at 30fps)
+        const isImpactShake = frame >= textImpactFrame && frame < textImpactFrame + 3;
+        const shakeX = isImpactShake ? Math.sin((frame - textImpactFrame) * 25) * 1.5 : 0;
+        const shakeY = isImpactShake ? Math.cos((frame - textImpactFrame) * 30) * 1.2 : 0;
+
+        // Text opacity (fades in as it descends)
+        const textOpacity = interpolate(
+            frame,
+            [textDropStart, textDropStart + 15],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // ===== GLOBE CONSTRUCTION PHASES =====
+        // Step 1: Horizon glow at bottom
+        const horizonGlowProgress = interpolate(
+            frame,
+            [horizonGlowStart, horizonGlowStart + 20],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Step 2: Scan line sweep (left to right, draws latitude lines)
+        const scanLineProgress = interpolate(
+            frame,
+            [scanLineStart, scanLineStart + 50],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Step 3: Longitude lines formation
+        const longitudeProgress = interpolate(
+            frame,
+            [longitudeStart, longitudeStart + 40],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Step 4: Rim light reveal
+        const rimLightProgress = interpolate(
+            frame,
+            [rimLightStart, rimLightStart + 30],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Step 5: Node activation (staggered pulses)
+        const nodeActivationProgress = interpolate(
+            frame,
+            [nodeActivationStart, nodeActivationStart + 45],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Very slow globe rotation (1-2 degrees over entire sequence)
+        const globeRotation = interpolate(
+            frame,
+            [horizonGlowStart, scene1End],
+            [0, 2],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Subtle camera push-in (3-5% zoom)
+        const cinematicZoom = interpolate(
+            frame,
+            [horizonGlowStart, scene1End],
+            [1, 1.04],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        );
+
+        // Hide camera container as text drops
         const cameraContainerOpacity = interpolate(
             frame,
-            [worldFlipStart, worldFlipStart + 20],
+            [textDropStart, textDropStart + 20],
             [1, 0],
             { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
         );
@@ -312,12 +391,8 @@ export const ProblemScene: React.FC = () => {
                                 ? interpolate(slideProgress, [0.6, 1], [0, 1])
                                 : 0;
 
-                            // ===== SPECIAL 3D ROTATION FOR "WORLD" =====
-                            let worldTransform = `translateX(${slideX}px) scale(${baseScale})`;
-                            if (isWorld && frame >= worldFlipStart) {
-                                // Apply 3D rotational flip (bottom to top)
-                                worldTransform = `translateX(${slideX}px) scale(${baseScale}) perspective(1000px) rotateX(${worldRotateX}deg)`;
-                            }
+                            // ===== WORD TRANSFORM =====
+                            const wordTransform = `translateX(${slideX}px) scale(${baseScale})`;
 
                             return (
                                 <span
@@ -333,8 +408,7 @@ export const ProblemScene: React.FC = () => {
                                         fontFamily,
                                         opacity,
                                         filter: blurAmount > 1 ? `blur(${blurAmount}px)` : undefined,
-                                        transform: isWorld ? worldTransform : `translateX(${slideX}px) scale(${baseScale})`,
-                                        transformStyle: isWorld ? "preserve-3d" : undefined,
+                                        transform: wordTransform,
                                         textShadow: glowIntensity > 0.3
                                             ? `0 0 ${40 * glowIntensity}px rgba(139,92,246,0.5)`
                                             : undefined,
@@ -350,128 +424,104 @@ export const ProblemScene: React.FC = () => {
                 </div>
 
 
-                {/* ========== "BUT THE WORLD" - CINEMATIC DROP ========== */}
-                {frame >= butPopupStart && (
+
+                {/* ========== "BUT THE WORLD" - CINEMATIC GRAVITY DROP ========== */}
+                {frame >= textDropStart && (
                     <div
                         style={{
                             position: "absolute",
                             left: "50%",
-                            top: "35%",
-                            transform: `translate(-50%, -50%)`,
+                            top: "32%",
+                            transform: `translate(-50%, ${textY + shakeY}px) translateX(${shakeX}px)`,
                             textAlign: "center",
-                            opacity: interpolate(frame, [butPopupStart, butPopupStart + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+                            opacity: textOpacity,
+                            // Motion blur effect during descent
+                            filter: motionBlurAmount > 0.5 ? `blur(0px ${motionBlurAmount}px)` : undefined,
                         }}
                     >
-                        {/* "But" word */}
-                        <div
+                        <span
                             style={{
-                                transform: `translateY(${interpolate(
-                                    spring({ frame: frame - butPopupStart, fps, config: { damping: 15, stiffness: 80 } }),
-                                    [0, 1], [80, 0], { extrapolateRight: "clamp" }
-                                )}px)`,
-                                opacity: spring({ frame: frame - butPopupStart, fps, config: { damping: 15, stiffness: 80 } }),
+                                fontSize: 72,
+                                fontWeight: 300,
+                                color: "rgba(232,236,255,0.9)",
+                                fontFamily,
+                                letterSpacing: "0.15em",
+                                textTransform: "uppercase",
+                                textShadow: "0 0 60px rgba(232,236,255,0.2)",
+                                display: "block",
                             }}
                         >
-                            <span
-                                style={{
-                                    fontSize: 48,
-                                    fontWeight: 500,
-                                    color: "rgba(255,255,255,0.7)",
-                                    fontFamily,
-                                    letterSpacing: "0.1em",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                But
-                            </span>
-                        </div>
-                        {/* "the world" text */}
-                        <div
-                            style={{
-                                marginTop: 10,
-                                transform: `translateY(${interpolate(
-                                    spring({ frame: frame - butPopupStart - 10, fps, config: { damping: 15, stiffness: 80 } }),
-                                    [0, 1], [100, 0], { extrapolateRight: "clamp" }
-                                )}px)`,
-                                opacity: spring({ frame: frame - butPopupStart - 10, fps, config: { damping: 15, stiffness: 80 } }),
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontSize: 88,
-                                    fontWeight: 700,
-                                    background: "linear-gradient(180deg, #FFFFFF 0%, #A5B4FC 50%, #6366F1 100%)",
-                                    WebkitBackgroundClip: "text",
-                                    WebkitTextFillColor: "transparent",
-                                    fontFamily,
-                                    letterSpacing: "0.02em",
-                                    textShadow: "0 0 80px rgba(99,102,241,0.5)",
-                                }}
-                            >
-                                the world
-                            </span>
-                        </div>
+                            But the world
+                        </span>
                     </div>
                 )}
 
-                {/* ========== PROFESSIONAL FULL-WIDTH HALF GLOBE ========== */}
-                {frame >= globeStart && (
+                {/* ========== PREMIUM WIREFRAME GLOBE - CINEMATIC CONSTRUCTION ========== */}
+                {frame >= horizonGlowStart && (
                     <div
                         style={{
                             position: "absolute",
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            height: interpolate(globeProgress, [0, 1], [0, 400], { extrapolateRight: "clamp" }),
+                            height: "50%",
                             overflow: "hidden",
-                            opacity: interpolate(globeProgress, [0, 0.3], [0, 1], { extrapolateRight: "clamp" }),
+                            transform: `scale(${cinematicZoom})`,
+                            transformOrigin: "center bottom",
                         }}
                     >
-                        <svg
-                            width="100%"
-                            height="900"
-                            viewBox="0 0 1920 900"
-                            preserveAspectRatio="xMidYMin slice"
+                        {/* Matte dark background with subtle gradient */}
+                        <div
                             style={{
                                 position: "absolute",
-                                bottom: -500,
+                                inset: 0,
+                                background: "linear-gradient(to top, #08080c 0%, #0a0a10 30%, transparent 100%)",
+                            }}
+                        />
+
+                        {/* Step 1: Horizon Glow */}
+                        <div
+                            style={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "100%",
+                                height: 4,
+                                background: `linear-gradient(90deg, transparent 5%, rgba(232,236,255,${0.15 * horizonGlowProgress}) 30%, rgba(232,236,255,${0.25 * horizonGlowProgress}) 50%, rgba(232,236,255,${0.15 * horizonGlowProgress}) 70%, transparent 95%)`,
+                                boxShadow: `0 0 80px 20px rgba(232,236,255,${0.08 * horizonGlowProgress})`,
+                            }}
+                        />
+
+                        {/* Step 2: Scan Line + Globe SVG */}
+                        <svg
+                            width="100%"
+                            height="100%"
+                            viewBox="0 0 1920 540"
+                            preserveAspectRatio="xMidYMax slice"
+                            style={{
+                                position: "absolute",
+                                bottom: 0,
                                 left: 0,
-                                transform: `translateY(${interpolate(globeProgress, [0, 1], [200, 0], { extrapolateRight: "clamp" })}px)`,
                             }}
                         >
                             <defs>
-                                {/* Premium ocean gradient - deep realistic blue */}
-                                <radialGradient id="premiumOcean" cx="50%" cy="20%" r="80%">
-                                    <stop offset="0%" stopColor="#1E3A8A" />
-                                    <stop offset="30%" stopColor="#1E40AF" />
-                                    <stop offset="60%" stopColor="#1D4ED8" />
-                                    <stop offset="100%" stopColor="#0F172A" />
-                                </radialGradient>
-
-                                {/* Atmosphere glow */}
-                                <radialGradient id="premiumAtmosphere" cx="50%" cy="0%" r="100%">
-                                    <stop offset="70%" stopColor="transparent" />
-                                    <stop offset="85%" stopColor="rgba(99,102,241,0.15)" />
-                                    <stop offset="95%" stopColor="rgba(139,92,246,0.25)" />
-                                    <stop offset="100%" stopColor="rgba(167,139,250,0.4)" />
-                                </radialGradient>
-
-                                {/* Inner light reflection */}
-                                <radialGradient id="innerLight" cx="30%" cy="20%">
-                                    <stop offset="0%" stopColor="rgba(255,255,255,0.08)" />
-                                    <stop offset="100%" stopColor="transparent" />
-                                </radialGradient>
-
-                                {/* Land gradient - subtle emerald */}
-                                <linearGradient id="premiumLand" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#10B981" />
-                                    <stop offset="50%" stopColor="#059669" />
-                                    <stop offset="100%" stopColor="#047857" />
+                                {/* Ultra-subtle grid line color */}
+                                <linearGradient id="gridLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="rgba(232,236,255,0.08)" />
+                                    <stop offset="50%" stopColor="rgba(232,236,255,0.15)" />
+                                    <stop offset="100%" stopColor="rgba(232,236,255,0.05)" />
                                 </linearGradient>
 
-                                {/* City lights glow */}
-                                <filter id="cityGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                {/* Rim light gradient */}
+                                <linearGradient id="rimLight" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="rgba(232,236,255,0.25)" />
+                                    <stop offset="100%" stopColor="transparent" />
+                                </linearGradient>
+
+                                {/* Node glow filter */}
+                                <filter id="nodeGlow" x="-100%" y="-100%" width="300%" height="300%">
+                                    <feGaussianBlur stdDeviation="4" result="blur" />
                                     <feMerge>
                                         <feMergeNode in="blur" />
                                         <feMergeNode in="blur" />
@@ -479,205 +529,178 @@ export const ProblemScene: React.FC = () => {
                                     </feMerge>
                                 </filter>
 
-                                {/* Soft edge blur */}
-                                <filter id="softEdge">
-                                    <feGaussianBlur stdDeviation="2" />
+                                {/* Depth blur for top arc */}
+                                <filter id="depthBlur">
+                                    <feGaussianBlur stdDeviation="1.5" />
                                 </filter>
                             </defs>
 
-                            {/* Outer atmosphere glow */}
+                            {/* Globe base - dark graphite matte */}
                             <ellipse
                                 cx="960"
-                                cy="900"
-                                rx="920"
-                                ry="920"
-                                fill="url(#premiumAtmosphere)"
+                                cy="540"
+                                rx={880}
+                                ry={880}
+                                fill="#0d0d12"
+                                opacity={horizonGlowProgress}
                             />
 
-                            {/* Main globe body */}
-                            <ellipse
-                                cx="960"
-                                cy="900"
-                                rx="880"
-                                ry="880"
-                                fill="url(#premiumOcean)"
-                            />
+                            {/* Step 2: Scan Line (sweeping left to right) */}
+                            {scanLineProgress > 0 && scanLineProgress < 1 && (
+                                <rect
+                                    x={scanLineProgress * 1920 - 2}
+                                    y={0}
+                                    width={4}
+                                    height={540}
+                                    fill="rgba(232,236,255,0.4)"
+                                    style={{
+                                        filter: "blur(1px)",
+                                    }}
+                                />
+                            )}
 
-                            {/* Globe edge - subtle blue rim */}
-                            <ellipse
-                                cx="960"
-                                cy="900"
-                                rx="880"
-                                ry="880"
-                                fill="none"
-                                stroke="rgba(147,197,253,0.4)"
-                                strokeWidth="3"
-                            />
+                            {/* Latitude lines - drawn progressively with scan line */}
+                            {[120, 200, 280, 360, 440].map((y, i) => {
+                                const distFromCenter = 540 - y;
+                                const baseRx = distFromCenter < 880 ? Math.sqrt(880 * 880 - distFromCenter * distFromCenter) : 0;
+                                // Draw percentage based on scan line position
+                                const drawProgress = interpolate(
+                                    scanLineProgress,
+                                    [i * 0.15, i * 0.15 + 0.4],
+                                    [0, 1],
+                                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                                );
+                                const visibleRx = baseRx * drawProgress;
 
-                            {/* Inner light reflection */}
-                            <ellipse
-                                cx="960"
-                                cy="900"
-                                rx="860"
-                                ry="860"
-                                fill="url(#innerLight)"
-                            />
-
-                            {/* Subtle latitude grid lines */}
-                            {[200, 350, 500, 650, 800].map((y, i) => {
-                                const distFromCenter = 900 - y;
-                                const rx = distFromCenter < 880 ? Math.sqrt(880 * 880 - distFromCenter * distFromCenter) : 0;
-                                return rx > 0 ? (
+                                return baseRx > 0 && drawProgress > 0 ? (
                                     <ellipse
                                         key={`lat-${i}`}
                                         cx="960"
                                         cy={y}
-                                        rx={rx}
-                                        ry={25}
+                                        rx={visibleRx}
+                                        ry={18}
                                         fill="none"
-                                        stroke="rgba(147,197,253,0.1)"
+                                        stroke="rgba(232,236,255,0.12)"
                                         strokeWidth="1"
+                                        strokeDasharray="8,12"
                                     />
                                 ) : null;
                             })}
 
-                            {/* Subtle longitude lines */}
-                            {[0, 20, 40, 60, 80, 100, 120, 140, 160].map((angle, i) => (
-                                <ellipse
-                                    key={`long-${i}`}
-                                    cx="960"
-                                    cy="900"
-                                    rx={15}
-                                    ry={880}
-                                    fill="none"
-                                    stroke="rgba(147,197,253,0.08)"
-                                    strokeWidth="1"
-                                    style={{
-                                        transform: `rotate(${angle + globeRotation * 0.3}deg)`,
-                                        transformOrigin: "960px 900px",
-                                    }}
-                                />
-                            ))}
-
-                            {/* Continents - refined shapes */}
-                            <g
-                                style={{
-                                    transform: `rotate(${globeRotation * 0.2}deg)`,
-                                    transformOrigin: "960px 900px",
-                                }}
-                                opacity="0.75"
-                            >
-                                {/* North America */}
-                                <path
-                                    d="M320 300 Q400 220 550 260 Q650 300 700 400 Q680 520 580 500 Q450 480 380 420 Q300 380 320 300Z"
-                                    fill="url(#premiumLand)"
-                                    filter="url(#softEdge)"
-                                />
-                                {/* Europe */}
-                                <path
-                                    d="M900 220 Q980 200 1080 250 Q1120 320 1080 400 Q1000 380 920 320 Q880 280 900 220Z"
-                                    fill="url(#premiumLand)"
-                                    filter="url(#softEdge)"
-                                />
-                                {/* Asia */}
-                                <path
-                                    d="M1100 240 Q1280 180 1450 280 Q1550 400 1480 550 Q1300 620 1150 520 Q1080 420 1100 240Z"
-                                    fill="url(#premiumLand)"
-                                    filter="url(#softEdge)"
-                                />
-                                {/* Africa */}
-                                <path
-                                    d="M880 420 Q960 400 1020 500 Q1000 700 900 780 Q800 740 820 600 Q840 480 880 420Z"
-                                    fill="url(#premiumLand)"
-                                    filter="url(#softEdge)"
-                                />
-                                {/* South America */}
-                                <path
-                                    d="M500 580 Q580 540 620 650 Q600 820 520 880 Q420 820 460 700 Q475 620 500 580Z"
-                                    fill="url(#premiumLand)"
-                                    filter="url(#softEdge)"
-                                />
-                                {/* Australia */}
-                                <path
-                                    d="M1350 650 Q1450 610 1520 700 Q1500 800 1400 840 Q1320 790 1350 650Z"
-                                    fill="url(#premiumLand)"
-                                    filter="url(#softEdge)"
-                                />
-                            </g>
-
-                            {/* City lights / connection points */}
-                            {[
-                                { x: 450, y: 380, size: 4 },   // New York
-                                { x: 380, y: 350, size: 3 },   // Chicago  
-                                { x: 580, y: 450, size: 3 },   // Miami
-                                { x: 950, y: 300, size: 4 },   // London
-                                { x: 1020, y: 320, size: 3 },  // Paris
-                                { x: 1200, y: 350, size: 5 },  // Moscow
-                                { x: 1400, y: 400, size: 5 },  // Tokyo
-                                { x: 1350, y: 500, size: 4 },  // Shanghai
-                                { x: 920, y: 580, size: 3 },   // Cairo
-                                { x: 870, y: 720, size: 3 },   // Lagos
-                                { x: 1420, y: 750, size: 4 },  // Sydney
-                                { x: 540, y: 750, size: 3 },   // São Paulo
-                            ].map((city, i) => {
-                                const pulsePhase = (time * 2 + i * 0.5) % 1;
-                                const pulse = 0.6 + Math.sin(pulsePhase * Math.PI * 2) * 0.4;
-                                const cityOpacity = interpolate(
-                                    frame - globeStart - 20 - i * 3,
-                                    [0, 15],
+                            {/* Step 3: Longitude lines - forming curvature */}
+                            {[0, 18, 36, 54, 72, 90, 108, 126, 144, 162].map((angle, i) => {
+                                const lineOpacity = interpolate(
+                                    longitudeProgress,
+                                    [i * 0.08, i * 0.08 + 0.3],
                                     [0, 1],
                                     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
                                 );
-                                return (
-                                    <g key={`city-${i}`} opacity={cityOpacity}>
-                                        {/* City glow */}
-                                        <circle
-                                            cx={city.x}
-                                            cy={city.y}
-                                            r={city.size * 3 * pulse}
-                                            fill="rgba(251,191,36,0.3)"
-                                            filter="url(#cityGlow)"
-                                        />
-                                        {/* City core */}
-                                        <circle
-                                            cx={city.x}
-                                            cy={city.y}
-                                            r={city.size * pulse}
-                                            fill="#FCD34D"
-                                            opacity={0.9}
-                                        />
-                                    </g>
-                                );
+
+                                return lineOpacity > 0 ? (
+                                    <ellipse
+                                        key={`long-${i}`}
+                                        cx="960"
+                                        cy="540"
+                                        rx={12}
+                                        ry={880}
+                                        fill="none"
+                                        stroke={`rgba(232,236,255,${0.08 * lineOpacity})`}
+                                        strokeWidth="1"
+                                        style={{
+                                            transform: `rotate(${angle + globeRotation}deg)`,
+                                            transformOrigin: "960px 540px",
+                                        }}
+                                    />
+                                ) : null;
                             })}
 
-                            {/* Subtle scan line effect */}
+                            {/* Step 4: Rim light on upper arc */}
                             <ellipse
                                 cx="960"
-                                cy={100 + (time * 80) % 700}
-                                rx={880 * Math.sin(Math.acos(Math.min(1, Math.abs(900 - (100 + (time * 80) % 700)) / 880)))}
-                                ry={3}
-                                fill="rgba(147,197,253,0.15)"
-                                opacity={0.5}
+                                cy="540"
+                                rx={880}
+                                ry={880}
+                                fill="none"
+                                stroke="url(#rimLight)"
+                                strokeWidth="2"
+                                opacity={rimLightProgress * 0.6}
+                                filter="url(#depthBlur)"
                             />
 
-                            {/* Top edge glow/highlight */}
+                            {/* Subtle inner arc highlight */}
                             <ellipse
                                 cx="960"
-                                cy="200"
-                                rx="600"
-                                ry="30"
-                                fill="rgba(255,255,255,0.06)"
+                                cy="180"
+                                rx="400"
+                                ry="25"
+                                fill="rgba(232,236,255,0.03)"
+                                opacity={rimLightProgress}
+                            />
+
+                            {/* Step 5: Node activation - selective intersection pulses */}
+                            {[
+                                { x: 400, y: 300 },
+                                { x: 680, y: 180 },
+                                { x: 960, y: 120 },
+                                { x: 1240, y: 180 },
+                                { x: 1520, y: 300 },
+                                { x: 560, y: 380 },
+                                { x: 1360, y: 380 },
+                                { x: 800, y: 280 },
+                                { x: 1120, y: 280 },
+                            ].map((node, i) => {
+                                const nodeDelay = i * 0.08;
+                                const nodeOpacity = interpolate(
+                                    nodeActivationProgress,
+                                    [nodeDelay, nodeDelay + 0.2],
+                                    [0, 1],
+                                    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                                );
+                                // Breathing glow
+                                const breathe = 0.7 + Math.sin((time * 1.5 + i * 0.7) * Math.PI) * 0.3;
+
+                                return nodeOpacity > 0 ? (
+                                    <g key={`node-${i}`} opacity={nodeOpacity}>
+                                        {/* Outer glow */}
+                                        <circle
+                                            cx={node.x}
+                                            cy={node.y}
+                                            r={8 * breathe}
+                                            fill="rgba(232,236,255,0.15)"
+                                            filter="url(#nodeGlow)"
+                                        />
+                                        {/* Core */}
+                                        <circle
+                                            cx={node.x}
+                                            cy={node.y}
+                                            r={2.5 * breathe}
+                                            fill="rgba(232,236,255,0.7)"
+                                        />
+                                    </g>
+                                ) : null;
+                            })}
+
+                            {/* Globe outer edge - very subtle */}
+                            <ellipse
+                                cx="960"
+                                cy="540"
+                                rx={880}
+                                ry={880}
+                                fill="none"
+                                stroke="rgba(232,236,255,0.08)"
+                                strokeWidth="1"
+                                opacity={longitudeProgress}
                             />
                         </svg>
 
-                        {/* Gradient fade at top edge */}
+                        {/* Soft gradient fade at top */}
                         <div
                             style={{
                                 position: "absolute",
                                 top: 0,
                                 left: 0,
                                 right: 0,
-                                height: 100,
+                                height: 150,
                                 background: "linear-gradient(to bottom, #06060a, transparent)",
                                 pointerEvents: "none",
                             }}
@@ -694,7 +717,7 @@ export const ProblemScene: React.FC = () => {
                         pointerEvents: "none",
                     }}
                 />
-            </div>
+            </div >
         );
     };
 
