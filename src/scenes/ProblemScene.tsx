@@ -53,12 +53,12 @@ export const ProblemScene: React.FC = () => {
 
         // Row 2: "Dozens of" (Right -> Left Flow)
         // "Dozens" appears first (on the right)
-        { text: "Dozens", startFrame: 90, x: 700, y: 120, width: 200, holdExtra: 0 },
+        { text: "Dozens", startFrame: 90, x: 590, y: 120, width: 200, holdExtra: 0 },
         // "of" appears second (to the left of Dozens)
-        { text: "of", startFrame: 105, x: 600, y: 120, width: 70, holdExtra: 0 },
+        { text: "of", startFrame: 105, x: 500, y: 120, width: 70, holdExtra: 0 },
 
         // Row 3: "APIs" (Left aligned relative to 'of')
-        { text: "APIs", startFrame: 120, x: 600, y: 240, width: 180, holdExtra: 30 },
+        { text: "APIs", startFrame: 120, x: 545, y: 240, width: 180, holdExtra: 30 },
     ];
 
     // ============ CAMERA MOTION - GLIDING ON RAILS ============
@@ -73,11 +73,11 @@ export const ProblemScene: React.FC = () => {
             { frame: 75, x: 730, y: 0, z: 2 },       // Slide to to
 
             // REVERSE MOTION for Row 2
-            { frame: 90, x: 700, y: 120, z: 3 },     // Down/Left to Dozens (Right side)
-            { frame: 105, x: 600, y: 120, z: 2 },    // Slide LEFT to of
+            { frame: 90, x: 590, y: 120, z: 3 },     // Down/Left to Dozens (Right side)
+            { frame: 105, x: 500, y: 120, z: 2 },    // Slide LEFT to of
 
-            { frame: 120, x: 600, y: 240, z: 4 },    // Down to APIs
-            { frame: 160, x: 600, y: 240, z: 0 },    // Lock
+            { frame: 120, x: 545, y: 240, z: 4 },    // Down to APIs
+            { frame: 160, x: 545, y: 240, z: 0 },    // Lock
         ];
 
         let prevKey = keyframes[0];
