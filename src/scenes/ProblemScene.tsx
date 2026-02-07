@@ -45,16 +45,20 @@ export const ProblemScene: React.FC = () => {
     // Variable timing: Hold → Slide → Lock → Micro pause
 
     const words = [
-        // Row 1: "Modern apps connect"
+        // Row 1: "Modern Softwares Connect to" (Left -> Right)
         { text: "Modern", startFrame: 15, x: 0, y: 0, width: 210, holdExtra: 10 },
-        { text: "apps", startFrame: 35, x: 220, y: 0, width: 140, holdExtra: 0 },
-        { text: "connect", startFrame: 55, x: 370, y: 0, width: 220, holdExtra: 0 },
-        // Row 2: "to dozens of" (Standard L->R)
-        { text: "to", startFrame: 75, x: 600, y: 0, width: 60, holdExtra: 0 }, // End of row 1 visual
-        { text: "dozens", startFrame: 90, x: 600, y: 100, width: 200, holdExtra: 0 },
-        { text: "of", startFrame: 105, x: 820, y: 100, width: 70, holdExtra: 0 },
-        // Row 3: "APIs"
-        { text: "APIs", startFrame: 120, x: 600, y: 220, width: 180, holdExtra: 30 },
+        { text: "Softwares", startFrame: 35, x: 220, y: 0, width: 270, holdExtra: 0 },
+        { text: "Connect", startFrame: 55, x: 500, y: 0, width: 220, holdExtra: 0 },
+        { text: "to", startFrame: 75, x: 730, y: 0, width: 60, holdExtra: 0 },
+
+        // Row 2: "Dozens of" (Right -> Left Flow)
+        // "Dozens" appears first (on the right)
+        { text: "Dozens", startFrame: 90, x: 700, y: 120, width: 200, holdExtra: 0 },
+        // "of" appears second (to the left of Dozens)
+        { text: "of", startFrame: 105, x: 600, y: 120, width: 70, holdExtra: 0 },
+
+        // Row 3: "APIs" (Left aligned relative to 'of')
+        { text: "APIs", startFrame: 120, x: 600, y: 240, width: 180, holdExtra: 30 },
     ];
 
     // ============ CAMERA MOTION - GLIDING ON RAILS ============
@@ -64,13 +68,16 @@ export const ProblemScene: React.FC = () => {
         const keyframes = [
             { frame: 0, x: 0, y: 0, z: 0 },
             { frame: 15, x: 0, y: 0, z: 0 },         // Hold Modern
-            { frame: 35, x: 220, y: 0, z: 2 },       // Slide to apps
-            { frame: 55, x: 370, y: 0, z: 0 },       // Slide to connect
-            { frame: 75, x: 600, y: 0, z: 2 },       // Slide to to
-            { frame: 90, x: 600, y: 100, z: 3 },     // Down to dozens
-            { frame: 105, x: 820, y: 100, z: 2 },    // Slide to of
-            { frame: 120, x: 600, y: 220, z: 4 },    // Down to APIs
-            { frame: 160, x: 600, y: 220, z: 0 },    // Lock
+            { frame: 35, x: 220, y: 0, z: 2 },       // Slide to Softwares
+            { frame: 55, x: 500, y: 0, z: 0 },       // Slide to Connect
+            { frame: 75, x: 730, y: 0, z: 2 },       // Slide to to
+
+            // REVERSE MOTION for Row 2
+            { frame: 90, x: 700, y: 120, z: 3 },     // Down/Left to Dozens (Right side)
+            { frame: 105, x: 600, y: 120, z: 2 },    // Slide LEFT to of
+
+            { frame: 120, x: 600, y: 240, z: 4 },    // Down to APIs
+            { frame: 160, x: 600, y: 240, z: 0 },    // Lock
         ];
 
         let prevKey = keyframes[0];
